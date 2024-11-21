@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from atproto import Client
+from atproto import Client, exceptions
 
 load_dotenv()
 
@@ -12,7 +12,7 @@ client = Client()
 try:
   client.login(os.getenv("USERNAME"), os.getenv("PASSWORD"))
   print("Login successful! 😎\n")
-except Exception as e:
+except exceptions.AtProtocolError as e:
   print(f"Failed to login: {e}")
   exit()
 
@@ -25,7 +25,7 @@ try:
   result = client.app.bsky.feed.search_posts(params={"q": "*", "author": os.getenv("USERNAME"), "until": three_months_ago.strftime("%Y-%m-%dT%H:%M:%SZ")})
   
   print(f"Fetched {len(result.posts)} posts ⭐️\n")
-except Exception as e:
+except exceptions.AtProtocolError as e:
   print(f"Failed to fetch posts: {e}")
   exit()
 
@@ -37,13 +37,13 @@ for post in result.posts:
       print(f"Deleting post {post.record.text}...")
       client.delete_post(post.uri)
       print("Post deleted successfully! 🎉")
-    except Exception as e:
+    except exceptions.AtProtocolError as e:
       print(f"Failed to delete post: {e}")
   else:
     print(f"Dry run...this would delete post {post.record.text}")
     # print(post.model_dump_json())
 
-  print("#################")
+  print("########################################")
 
 print("All done! 🚀")
 
