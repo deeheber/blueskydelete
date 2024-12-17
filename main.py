@@ -22,6 +22,7 @@ today = datetime.now()
 three_months_ago = today - timedelta(days=90)
 
 try:
+  # TODO: add pagination
   result = client.app.bsky.feed.search_posts(params={"q": "*", "author": os.getenv("USERNAME"), "until": three_months_ago.strftime("%Y-%m-%dT%H:%M:%SZ")})
   
   print(f"Fetched {len(result.posts)} posts ⭐️\n")
@@ -34,13 +35,13 @@ delete_flag = os.getenv("DELETE_POSTS")
 for post in result.posts:
   if delete_flag == "true":
     try:
-      print(f"Deleting post {post.record.text}...")
+      print(f"Deleting post \n\n{post.record.text}...")
       client.delete_post(post.uri)
       print("Post deleted successfully! 🎉")
     except exceptions.AtProtocolError as e:
       print(f"Failed to delete post: {e}")
   else:
-    print(f"Dry run...this would delete post {post.record.text}")
+    print(f"Dry run...this would delete post \n\n{post.record.text}")
     # print(post.model_dump_json())
 
   print("########################################")
