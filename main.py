@@ -16,23 +16,33 @@ except exceptions.AtProtocolError as e:
   print(f"Failed to login: {e}")
   exit()
 
-# Get posts up until three months ago
+# Get posts up until x days ago
+# Default is 90 days
 today = datetime.now()
-# TODO edit this to change the time frame if desired
-three_months_ago = today - timedelta(days=90)
+num_days = int(os.getenv("DAYS_AGO", 90))
+days_ago = today - timedelta(days=num_days)
 
 try:
-  # TODO: add pagination
-  result = client.app.bsky.feed.search_posts(params={"q": "*", "author": os.getenv("USERNAME"), "until": three_months_ago.strftime("%Y-%m-%dT%H:%M:%SZ")})
-  
-  print(f"Fetched {len(result.posts)} posts ⭐️\n")
+  posts = []
+  cursor = None
+
+  while True:
+    result = client.app.bsky.feed.search_posts(params={"q": "*", "author": os.getenv("USERNAME"), "until": days_ago.strftime("%Y-%m-%dT%H:%M:%SZ"), "cursor": cursor})
+
+    posts += result.posts
+
+    if not result.cursor:
+      break
+    cursor = result.cursor
+
+  print(f"Fetched {len(posts)} posts ⭐️\n")
 except exceptions.AtProtocolError as e:
   print(f"Failed to fetch posts: {e}")
   exit()
 
 # Delete posts returned from the previous query
 delete_flag = os.getenv("DELETE_POSTS")
-for post in result.posts:
+for post in posts:
   if delete_flag == "true":
     try:
       print(f"Deleting post \n\n{post.record.text}...")
@@ -45,6 +55,5 @@ for post in result.posts:
     # print(post.model_dump_json())
 
   print("########################################")
-
 print("All done! 🚀")
 
