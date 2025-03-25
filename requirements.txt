@@ -1,2 +1,2 @@
-atproto==0.0.55
-python-dotenv==1.0.1
+atproto==0.0.59
+python-dotenv==1.1.0

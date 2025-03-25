@@ -55,5 +55,6 @@ for post in posts:
     # print(post.model_dump_json())
 
   print("########################################")
+print(f"{len(posts)} posts {'deleted' if delete_flag == 'true' else 'processed'}!")
 print("All done! 🚀")
 
