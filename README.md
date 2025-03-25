@@ -20,5 +20,4 @@ The goal is to only have posts that are at most three months old (but the three 
 This is admittedly pretty simple and bare bones.
 
 1. Explore using the `requests` library directly to make http calls instead of the `atproto` wrapper
-2. Set up a Github action for this script to run on a cron instead of needing to manually run it
-3. Add in the ability to delete likes and reposts
+2. Add in the ability to delete likes and reposts
