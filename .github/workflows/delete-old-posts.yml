@@ -1,0 +1,35 @@
+name: delete old posts
+run-name: ${{ github.actor }} has run the delete-old-posts trigger
+on:
+  # TODO uncomment this
+  # schedule:
+  #   - cron: "0 5 * * 5"
+  workflow_dispatch:
+
+concurrency:
+  group: delete-old-posts
+  cancel-in-progress: true
+
+jobs:
+  delete-posts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.1"
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Delete old posts
+        run: |
+          source .venv/bin/activate
+          python delete_old_posts.py
+        env:
+          USERNAME: ${{ vars.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          DELETE_POSTS: false
