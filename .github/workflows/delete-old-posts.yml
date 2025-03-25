@@ -1,9 +1,8 @@
 name: delete old posts
 run-name: ${{ github.actor }} has run the delete-old-posts trigger
 on:
-  # TODO uncomment this
-  # schedule:
-  #   - cron: "0 5 * * 5"
+  schedule:
+    - cron: "0 5 * * 5"
   workflow_dispatch:
 
 concurrency:
@@ -28,8 +27,10 @@ jobs:
       - name: Delete old posts
         run: |
           source .venv/bin/activate
-          python delete_old_posts.py
+          python main.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
-          DELETE_POSTS: false
+          DELETE_POSTS: ${{ vars.DELETE_POSTS }}
+          # Default is 90 days to present
+          # Use DAYS_AGO to change
