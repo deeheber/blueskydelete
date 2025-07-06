@@ -58,7 +58,7 @@ before_date = days_ago.strftime(time_format)
 print(f"Target date: {before_date}...🗓️\n")
 
 num_reposts_deleted = 0
-dry_run = bool(os.getenv("DRY_RUN", "true"))
+dry_run = os.getenv("DRY_RUN", "true").lower() == "true"
 
 for repost in reposts:
   if dry_run == False:
