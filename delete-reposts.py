@@ -69,7 +69,7 @@ for repost in reposts:
     try:
       print("Deleting repost...⏳")
       client.com.atproto.repo.delete_record(
-        params={
+        data={
           "repo": repo,
           "collection": collection,
           "rkey": AtUri.from_str(repost.uri).rkey,
@@ -77,7 +77,7 @@ for repost in reposts:
       )
       print("Repost deleted successfully! 🎉")
     except exceptions.AtProtocolError as e:
-      print(f"Failed to delete post: {e}")
+      print(f"Failed to delete repost: {e}")
   else:
     # Print full repost commented out but keeping for debugging
     # print(repost.model_dump_json(indent=2))

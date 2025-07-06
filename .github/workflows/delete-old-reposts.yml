@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  delete-posts:
+  delete-reposts:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
