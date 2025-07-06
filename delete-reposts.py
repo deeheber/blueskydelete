@@ -1,5 +1,4 @@
 import os
-import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from atproto import Client, AtUri, exceptions
