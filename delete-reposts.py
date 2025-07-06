@@ -61,6 +61,10 @@ num_reposts_deleted = 0
 dry_run = os.getenv("DRY_RUN", "true").lower() == "true"
 
 for repost in reposts:
+  # Break early to save some cycles if current post is after target time
+  if (datetime.strptime(repost.value.created_at, time_format) > datetime.strptime(before_date, time_format)):
+    break
+
   if dry_run == False:
     try:
       print("Deleting repost...⏳")
@@ -81,10 +85,6 @@ for repost in reposts:
 
   print("########################################")
   num_reposts_deleted += 1
-
-  if (datetime.strptime(repost.value.created_at, time_format) > datetime.strptime(before_date, time_format)):
-    # Break early to save some cycles
-    break
 
 print(f"{num_reposts_deleted} posts {'deleted' if dry_run == False else 'processed'}!")
 print("All done! 🚀")
