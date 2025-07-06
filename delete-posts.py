@@ -41,7 +41,7 @@ except exceptions.AtProtocolError as e:
   exit()
 
 # Delete posts returned from the previous query
-dry_run = bool(os.getenv("DRY_RUN", "true"))
+dry_run = os.getenv("DRY_RUN", "true").lower() == "true"
 for post in posts:
   if dry_run == False:
     try:
