@@ -1,12 +1,12 @@
-name: delete old posts
-run-name: ${{ github.actor }} has run the delete-old-posts trigger
+name: delete old reposts
+run-name: ${{ github.actor }} has run the delete-old-reposts trigger
 on:
   schedule:
-    - cron: "0 5 * * 5"
+    - cron: "0 5 * * 3"
   workflow_dispatch:
 
 concurrency:
-  group: delete-old-posts
+  group: delete-old-reposts
   cancel-in-progress: true
 
 jobs:
@@ -24,10 +24,10 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
-      - name: Delete old posts
+      - name: Delete old reposts
         run: |
           source .venv/bin/activate
-          python delete-posts.py
+          python delete-reposts.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
