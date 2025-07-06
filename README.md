@@ -2,7 +2,7 @@
 
 Recreating some of the functionality of https://tweetdelete.net/, but for bluesky.
 
-Currently the scripts search for posts (including replies) and reposts of the currently logged in user from the beginning up until three months ago and deletes them.
+Currently the scripts search for posts (including replies) and reposts of the currently logged in user from the beginning up until three months ago and delete them.
 
 The goal is to only have posts and reposts that are at most three months old (but the three months is configurable via env vars).
 
