@@ -67,9 +67,9 @@ for repost in reposts:
 
   if dry_run == False:
     try:
-      print("Deleting repost...⏳")
+      print(f"Deleting repost...⏳\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
       client.com.atproto.repo.delete_record(
-        params={
+        data={
           "repo": repo,
           "collection": collection,
           "rkey": AtUri.from_str(repost.uri).rkey,
@@ -77,11 +77,11 @@ for repost in reposts:
       )
       print("Repost deleted successfully! 🎉")
     except exceptions.AtProtocolError as e:
-      print(f"Failed to delete post: {e}")
+      print(f"Failed to delete repost: {e}")
   else:
     # Print full repost commented out but keeping for debugging
     # print(repost.model_dump_json(indent=2))
-    print(f"Dry run, if run for real this would delete repost...\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
+    print(f"Dry run, if run for real this would delete repost...⏳\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
 
   print("########################################")
   num_reposts_deleted += 1
