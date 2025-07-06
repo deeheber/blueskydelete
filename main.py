@@ -29,7 +29,7 @@ try:
   while True:
     result = client.app.bsky.feed.search_posts(params={"q": "*", "author": os.getenv("USERNAME"), "until": days_ago.strftime("%Y-%m-%dT%H:%M:%SZ"), "cursor": cursor})
 
-    posts += result.posts
+    posts.extend(result.posts)
 
     if not result.cursor:
       break
@@ -41,20 +41,19 @@ except exceptions.AtProtocolError as e:
   exit()
 
 # Delete posts returned from the previous query
-delete_flag = os.getenv("DELETE_POSTS")
+dry_run = bool(os.getenv("DRY_RUN", "true"))
 for post in posts:
-  if delete_flag == "true":
+  if dry_run == False:
     try:
-      print(f"Deleting post \n\n{post.record.text}...")
+      print(f"Deleting post \n\n{post.record.text}...⏳")
       client.delete_post(post.uri)
       print("Post deleted successfully! 🎉")
     except exceptions.AtProtocolError as e:
       print(f"Failed to delete post: {e}")
   else:
     print(f"Dry run...this would delete post \n\n{post.record.text}")
-    # print(post.model_dump_json())
 
   print("########################################")
-print(f"{len(posts)} posts {'deleted' if delete_flag == 'true' else 'processed'}!")
+print(f"{len(posts)} posts {'deleted' if dry_run == False else 'processed'}!")
 print("All done! 🚀")
 
