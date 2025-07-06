@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from atproto import Client, AtUri, exceptions
+from atproto import Client, exceptions
 
 load_dotenv()
 
@@ -68,13 +68,7 @@ for repost in reposts:
   if dry_run == False:
     try:
       print(f"Deleting repost...⏳\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
-      client.com.atproto.repo.delete_record(
-        data={
-          "repo": repo,
-          "collection": collection,
-          "rkey": AtUri.from_str(repost.uri).rkey,
-        }
-      )
+      client.delete_repost(repost.uri)
       print("Repost deleted successfully! 🎉")
     except exceptions.AtProtocolError as e:
       print(f"Failed to delete repost: {e}")
