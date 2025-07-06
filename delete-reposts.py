@@ -53,15 +53,16 @@ today = datetime.now()
 num_days = int(os.getenv("DAYS_AGO", 90))
 days_ago = today - timedelta(days=num_days)
 time_format  = "%Y-%m-%dT%H:%M:%S.%fZ"
-before_date = days_ago.strftime(time_format)
-print(f"Target date: {before_date}...🗓️\n")
+target_date_str = days_ago.strftime(time_format)
+print(f"Target date: {target_date_str}...🗓️\n")
+target_date = datetime.strptime(target_date_str, time_format)
 
 num_reposts_deleted = 0
 dry_run = os.getenv("DRY_RUN", "true").lower() == "true"
 
 for repost in reposts:
-  # Break early to save some cycles if current post is after target time
-  if (datetime.strptime(repost.value.created_at, time_format) > datetime.strptime(before_date, time_format)):
+  # Break early to save some cycles if current post is after target date
+  if (datetime.strptime(repost.value.created_at, time_format) > target_date):
     break
 
   if dry_run == False:
