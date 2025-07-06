@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install -r requirements.txt
+          pip install -e .
       - name: Delete old posts
         run: |
           source .venv/bin/activate
@@ -32,5 +32,4 @@ jobs:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
           DRY_RUN: ${{ vars.DRY_RUN }}
-          # Default is 90 days to present
-          # Use DAYS_AGO to change
+          DAYS_AGO: ${{ vars.DAYS_AGO }}

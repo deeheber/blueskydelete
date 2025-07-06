@@ -1,9 +1,12 @@
 import os
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 from atproto import Client, exceptions
 
-load_dotenv()
+if os.getenv("CI"):
+  print("Running in CI...skipping dotenv import.")
+else:
+  from dotenv import load_dotenv
+  load_dotenv()
 
 # Set Variables
 client = Client()

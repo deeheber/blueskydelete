@@ -1,0 +1,12 @@
+[project]
+name = "blueskydelete"
+version = "0.1.0"
+authors = [
+  {name = "Danielle Heberling"}
+]
+dependencies = [
+  "atproto==0.0.61"
+]
+
+[project.optional-dependencies]
+dev = ["python-dotenv==1.1.1"]
