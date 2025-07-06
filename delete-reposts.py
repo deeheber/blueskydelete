@@ -67,7 +67,7 @@ for repost in reposts:
 
   if dry_run == False:
     try:
-      print("Deleting repost...⏳")
+      print(f"Deleting repost...⏳\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
       client.com.atproto.repo.delete_record(
         data={
           "repo": repo,
@@ -81,7 +81,7 @@ for repost in reposts:
   else:
     # Print full repost commented out but keeping for debugging
     # print(repost.model_dump_json(indent=2))
-    print(f"Dry run, if run for real this would delete repost...\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
+    print(f"Dry run, if run for real this would delete repost...⏳\n\nuri: {repost.uri}\ncreated_at: {repost.value.created_at}")
 
   print("########################################")
   num_reposts_deleted += 1
