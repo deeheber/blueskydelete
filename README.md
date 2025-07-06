@@ -9,7 +9,7 @@ The goal is to only have posts and reposts that are at most three months old (bu
 ## Quick Start (instructions are for on a Mac)
 
 1. Clone this repo
-2. Check the `.python-version` file for the version of python to use. Other versions might work, but this is the verison used during creation.
+2. Check the `.python-version` file for the version of python to use. Other versions might work, but this is the version used during creation.
 3. Create a virtual environment: `python3 -m venv .venv`
 4. Activate the virtual environment: `source .venv/bin/activate`
 5. Install dependencies: `pip install -r requirements.txt`
