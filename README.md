@@ -12,7 +12,7 @@ The goal is to only have posts and reposts that are at most three months old (bu
 2. Check the `.python-version` file for the version of python to use. Other versions might work, but this is the version used during creation.
 3. Create a virtual environment: `python3 -m venv .venv`
 4. Activate the virtual environment: `source .venv/bin/activate`
-5. Install dependencies: `pip install -r requirements.txt`
+5. Install dependencies: `pip install -e .'[dev]'` (for development with dotenv support) or `pip install -e .` (for production)
 6. Get env vars set up: `touch .env & cp .env.sample .env` and change the values in the created `.env`. Note that setting the `DRY_RUN` to false will actually delete things (be careful). Omitting or setting to true will print what will be deleted as a dry run.
 7. Run script: `python delete-posts.py` or `python delete-reposts.py` depending on what you want to do
 

@@ -1,9 +1,10 @@
 import os
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 from atproto import Client, exceptions
 
-load_dotenv()
+if not os.getenv("CI"):
+  from dotenv import load_dotenv
+  load_dotenv()
 
 # Set Variables
 client = Client()
