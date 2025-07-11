@@ -27,7 +27,7 @@ jobs:
       - name: Delete old reposts
         run: |
           source .venv/bin/activate
-          python delete-reposts.py
+          python ./src/delete-reposts.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}

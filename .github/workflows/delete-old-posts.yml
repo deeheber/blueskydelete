@@ -27,7 +27,7 @@ jobs:
       - name: Delete old posts
         run: |
           source .venv/bin/activate
-          python delete-posts.py
+          python ./src/delete-posts.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
