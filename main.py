@@ -9,10 +9,34 @@ else:
   from dotenv import load_dotenv
   load_dotenv()
 
+# Custom colored formatter
+class ColoredFormatter(logging.Formatter):
+    COLORS = {
+        'DEBUG': '\033[38;5;208m',  # Orange
+        'INFO': '\033[36m',         # Cyan
+        'WARNING': '\033[33m',      # Yellow
+        'ERROR': '\033[31m',        # Red
+        'CRITICAL': '\033[35m',     # Magenta
+    }
+    RESET = '\033[0m'
+    
+    def format(self, record):
+        log_color = self.COLORS.get(record.levelname, '')
+        record.levelname = f"{log_color}[{record.levelname}]{self.RESET}"
+        return super().format(record)
+
 # Configure logging after dotenv is loaded
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(level=getattr(logging, log_level), format='[%(levelname)s] - %(message)s')
 logger = logging.getLogger(__name__)
+logger.setLevel(getattr(logging, log_level))
+
+# Create console handler with colored formatter
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(ColoredFormatter('%(levelname)s %(message)s'))
+logger.addHandler(console_handler)
+
+# Prevent duplicate logs
+logger.propagate = False
 
 logger.info(f"ℹ️ Log level set to {log_level}")
 
