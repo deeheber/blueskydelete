@@ -25,6 +25,8 @@ except exceptions.AtProtocolError as e:
 def fetch_and_process(collection_name):
   # Fetch items
   collection_url = "app.bsky.feed." + collection_name
+
+  print(f"Starting to process {collection_name}s 🏁\n")
   try:
     items = []
     cursor = None
@@ -76,11 +78,11 @@ def fetch_and_process(collection_name):
       print(f"Dry run, if run for real this would delete {collection_name}...⏳")
       print(item.model_dump_json(indent=2))
 
-    print("########################################")
+    print("=" * 75)
     num_deleted += 1
 
   print(f"{num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
-  print("All done! 🚀")
+  print(f"All done with {collection_name}s ✅🚀\n")
 
 fetch_and_process("post")
 fetch_and_process("repost")
