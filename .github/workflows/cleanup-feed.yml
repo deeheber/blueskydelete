@@ -1,16 +1,16 @@
-name: delete old posts
-run-name: ${{ github.actor }} has run the delete-old-posts trigger
+name: cleanup feed
+run-name: ${{ github.actor }} has run the cleanup-feed trigger
 on:
   schedule:
     - cron: "0 5 * * 5"
   workflow_dispatch:
 
 concurrency:
-  group: delete-old-posts
+  group: cleanup-feed
   cancel-in-progress: true
 
 jobs:
-  delete-posts:
+  cleanup-feed:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -24,10 +24,10 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install -e .
-      - name: Delete old posts
+      - name: Delete old posts, reposts, and likes
         run: |
           source .venv/bin/activate
-          python ./src/delete-posts.py
+          python ./main.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
