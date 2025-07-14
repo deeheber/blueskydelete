@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from atproto import Client, exceptions
 
@@ -8,25 +9,32 @@ else:
   from dotenv import load_dotenv
   load_dotenv()
 
+# Configure logging after dotenv is loaded
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, log_level), format='[%(levelname)s] - %(message)s')
+logger = logging.getLogger(__name__)
+
+logger.info(f"ℹ️ Log level set to {log_level}")
+
 # Set Variables
 client = Client()
 repo = os.getenv("USERNAME")
 
 # Login
-print("Logging in...⏳")
+logger.info("⏳ Logging in...")
 
 try:
   client.login(repo, os.getenv("PASSWORD"))
-  print("Login successful! 😎\n")
+  logger.info("😎 Login successful!")
 except exceptions.AtProtocolError as e:
-  print(f"Failed to login: {e}")
+  logger.error(f"Failed to login: {e}")
   exit()
 
 def fetch_and_process(collection_name):
   # Fetch items
   collection_url = "app.bsky.feed." + collection_name
 
-  print(f"Starting to process {collection_name}s 🏁\n")
+  logger.info(f"🏁 Starting to process {collection_name}s")
   try:
     items = []
     cursor = None
@@ -48,14 +56,14 @@ def fetch_and_process(collection_name):
         break
       cursor = result.cursor
 
-    print(f"Fetched {len(items)} {collection_name}s total ⭐️\n")
+    logger.info(f"⭐️ Fetched {len(items)} {collection_name}s total")
   except exceptions.AtProtocolError as e:
-    print(f"Failed to get {collection_name}s: {e}")
+    logger.error(f"Failed to get {collection_name}s: {e}")
     exit()
 
   num_days = int(os.getenv("DAYS_AGO", 90))
   target_date = datetime.now() - timedelta(days=num_days)
-  print(f"Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}...🗓️\n")
+  logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
 
   client_method="delete_" + collection_name
   num_deleted = 0
@@ -68,21 +76,21 @@ def fetch_and_process(collection_name):
 
     if dry_run == False:
       try:
-        print(f"Deleting {collection_name}s...⏳")
-        print(item.model_dump_json(indent=2))
+        logger.info(f"⏳ Deleting {collection_name}:{item.uri}...")
+        logger.debug(item.model_dump_json(indent=2))
         getattr(client, client_method)(item.uri)
-        print(f"{collection_name.title()} deleted successfully! 🎉")
+        logger.info(f"🎉 {collection_name.title()} deleted successfully!")
       except exceptions.AtProtocolError as e:
-        print(f"Failed to delete {collection_name}s: {e}")
+        logger.error(f"Failed to delete {collection_name}s: {e}")
     else:
-      print(f"Dry run, if run for real this would delete {collection_name}...⏳")
-      print(item.model_dump_json(indent=2))
+      logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
+      logger.warning(item.model_dump_json(indent=2))
 
-    print("=" * 75)
+    logger.info("=" * 75)
     num_deleted += 1
 
-  print(f"{num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
-  print(f"All done with {collection_name}s ✅🚀\n")
+  logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
+  logger.info(f"🚀 All done with {collection_name}s")
 
 fetch_and_process("post")
 fetch_and_process("repost")
