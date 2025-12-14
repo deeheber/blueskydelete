@@ -130,23 +130,23 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
   target_date = datetime.now() - timedelta(days=num_days)
   logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
 
-  client_method="delete_" + collection_name
+  client_method = f"delete_{collection_name}"
   num_deleted = 0
   dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
 
   for item in items:
     # Break early to save some cycles if current post is after target date
-    if (datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date):
+    if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
       break
 
-    if dry_run == False:
+    if not dry_run:
       try:
         logger.info(f"⏳ Deleting {collection_name}:{item.uri}...")
         logger.debug(item.model_dump_json(indent=2))
         getattr(client, client_method)(item.uri)
         logger.info(f"🎉 {collection_name.title()} deleted successfully!")
       except exceptions.AtProtocolError as e:
-        logger.error(f"Failed to delete {collection_name}s: {e}")
+        logger.error(f"Failed to delete {collection_name}: {e}")
     else:
       logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
       logger.warning(item.model_dump_json(indent=2))
@@ -154,7 +154,7 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
     logger.info(LOG_SEPARATOR)
     num_deleted += 1
 
-  logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
+  logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
   logger.info(f"🚀 All done with {collection_name}s")
 
 
