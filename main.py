@@ -20,6 +20,8 @@ else:
 
 # Custom colored formatter
 class ColoredFormatter(logging.Formatter):
+    """Custom logging formatter that adds colors to log levels for better readability."""
+    
     COLORS = {
         'DEBUG': '\033[38;5;208m',  # Orange
         'INFO': '\033[36m',         # Cyan
@@ -30,12 +32,24 @@ class ColoredFormatter(logging.Formatter):
     RESET = '\033[0m'
     
     def format(self, record: logging.LogRecord) -> str:
+        """Format log record with color codes for the log level.
+        
+        Args:
+            record: The log record to format
+            
+        Returns:
+            Formatted log message with color codes
+        """
         log_color = self.COLORS.get(record.levelname, '')
         record.levelname = f"{log_color}[{record.levelname}]{self.RESET}"
         return super().format(record)
 
 def setup_logging() -> logging.Logger:
-    """Set up colored logging with configurable level."""
+    """Set up colored logging with configurable level.
+    
+    Returns:
+        Configured logger instance
+    """
     log_level = os.getenv("LOG_LEVEL", DEFAULT_LOG_LEVEL).upper()
     logger = logging.getLogger(__name__)
     logger.setLevel(getattr(logging, log_level))
@@ -53,7 +67,11 @@ def setup_logging() -> logging.Logger:
 
 
 def validate_environment() -> None:
-    """Validate required environment variables are present."""
+    """Validate required environment variables are present and valid.
+    
+    Raises:
+        SystemExit: If required variables are missing or invalid
+    """
     required_vars = ["USERNAME", "PASSWORD"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
@@ -74,7 +92,17 @@ def validate_environment() -> None:
 
 
 def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
-    """Authenticate with Bluesky and return client and repo."""
+    """Authenticate with Bluesky and return client and repo.
+    
+    Args:
+        logger: Logger instance for output
+        
+    Returns:
+        Tuple of (authenticated_client, repo_name)
+        
+    Raises:
+        SystemExit: If authentication fails
+    """
     client = Client()
     repo = os.getenv("USERNAME", "")
     password = os.getenv("PASSWORD", "")
@@ -90,7 +118,17 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
         raise SystemExit(1) from e
 
 def fetch_and_process(collection_name: str, client: Client, repo: str, logger: logging.Logger) -> None:
-  """Fetch and process items from a specific collection for deletion."""
+  """Fetch and process items from a specific collection for deletion.
+  
+  Args:
+      collection_name: Type of collection to process ('post', 'repost', 'like')
+      client: Authenticated Bluesky client
+      repo: Repository/username to process
+      logger: Logger instance for output
+      
+  Raises:
+      SystemExit: If fetching records fails
+  """
   # Fetch items
   collection_url = COLLECTION_PREFIX + collection_name
 
@@ -159,7 +197,11 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
 
 
 def main() -> None:
-    """Main function to orchestrate the Bluesky cleanup process."""
+    """Main function to orchestrate the Bluesky cleanup process.
+    
+    Validates environment, sets up logging, authenticates with Bluesky,
+    and processes posts, reposts, and likes for deletion based on age.
+    """
     validate_environment()
     logger = setup_logging()
     client, repo = authenticate_client(logger)
