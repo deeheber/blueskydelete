@@ -1,3 +1,29 @@
+"""Bluesky Content Cleanup Tool
+
+A Python script that automatically deletes old posts, reposts, and likes from Bluesky
+based on a configurable age threshold. Designed to help keep your feed fresh by
+cleaning up content older than a specified number of days.
+
+Features:
+- Colored logging with configurable levels
+- Dry run mode for safe testing
+- Flexible date range configuration
+- Handles multiple content types (posts, reposts, likes)
+- Proper error handling and input validation
+
+Environment Variables:
+- USERNAME: Bluesky username/handle (required)
+- PASSWORD: Bluesky app password (required)
+- DRY_RUN: 'true' for testing, 'false' for actual deletion (default: 'true')
+- DAYS_AGO: Number of days back to delete content (default: 90)
+- LOG_LEVEL: Logging level - DEBUG, INFO, WARNING, ERROR (default: 'INFO')
+
+Usage:
+    python main.py
+
+Author: Danielle Heberling
+"""
+
 import os
 import logging
 from datetime import datetime, timedelta
