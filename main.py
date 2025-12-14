@@ -4,6 +4,14 @@ from datetime import datetime, timedelta
 from typing import Optional
 from atproto import Client, exceptions
 
+# Constants
+DEFAULT_LOG_LEVEL = "INFO"
+DEFAULT_DAYS_AGO = 90
+DEFAULT_DRY_RUN = "true"
+BATCH_SIZE = 100
+COLLECTION_PREFIX = "app.bsky.feed."
+LOG_SEPARATOR = "=" * 75
+
 if os.getenv("CI"):
   print("Running in CI...skipping dotenv import.")
 else:
@@ -28,7 +36,7 @@ class ColoredFormatter(logging.Formatter):
 
 def setup_logging() -> logging.Logger:
     """Set up colored logging with configurable level."""
-    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_level = os.getenv("LOG_LEVEL", DEFAULT_LOG_LEVEL).upper()
     logger = logging.getLogger(__name__)
     logger.setLevel(getattr(logging, log_level))
 
@@ -69,8 +77,9 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
         raise SystemExit(1) from e
 
 def fetch_and_process(collection_name: str, client: Client, repo: str, logger: logging.Logger) -> None:
+  """Fetch and process items from a specific collection for deletion."""
   # Fetch items
-  collection_url = "app.bsky.feed." + collection_name
+  collection_url = COLLECTION_PREFIX + collection_name
 
   logger.info(f"🏁 Starting to process {collection_name}s")
   try:
@@ -82,7 +91,7 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
         params={
           "repo": repo,
           "collection": collection_url,
-          "limit": 100,
+          "limit": BATCH_SIZE,
           "cursor": cursor,
           "reverse": True,
         }
@@ -99,13 +108,13 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
     logger.error(f"Failed to get {collection_name}s: {e}")
     raise SystemExit(1) from e
 
-  num_days = int(os.getenv("DAYS_AGO", 90))
+  num_days = int(os.getenv("DAYS_AGO", DEFAULT_DAYS_AGO))
   target_date = datetime.now() - timedelta(days=num_days)
   logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
 
   client_method="delete_" + collection_name
   num_deleted = 0
-  dry_run = os.getenv("DRY_RUN", "true").lower() == "true"
+  dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
 
   for item in items:
     # Break early to save some cycles if current post is after target date
@@ -124,7 +133,7 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
       logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
       logger.warning(item.model_dump_json(indent=2))
 
-    logger.info("=" * 75)
+    logger.info(LOG_SEPARATOR)
     num_deleted += 1
 
   logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
