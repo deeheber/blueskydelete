@@ -209,14 +209,15 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
                 logger.debug(item.model_dump_json(indent=2))
                 getattr(client, client_method)(item.uri)
                 logger.info(f"🎉 {collection_name.title()} deleted successfully!")
+                num_deleted += 1
             except exceptions.AtProtocolError as e:
                 logger.error(f"Failed to delete {collection_name}: {e}")
         else:
             logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
             logger.warning(item.model_dump_json(indent=2))
+            num_deleted += 1
 
         logger.info(LOG_SEPARATOR)
-        num_deleted += 1
 
     logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
     logger.info(f"🚀 All done with {collection_name}s")
@@ -235,6 +236,8 @@ def main() -> None:
     fetch_and_process("post", client, repo, logger)
     fetch_and_process("repost", client, repo, logger)
     fetch_and_process("like", client, repo, logger)
+
+    logger.info(f"✨ All done with everything.")
 
 
 if __name__ == "__main__":
