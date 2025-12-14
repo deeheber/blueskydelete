@@ -39,10 +39,10 @@ COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
 
 if os.getenv("CI"):
-  print("Running in CI...skipping dotenv import.")
+    print("Running in CI...skipping dotenv import.")
 else:
-  from dotenv import load_dotenv
-  load_dotenv()
+    from dotenv import load_dotenv
+    load_dotenv()
 
 # Custom colored formatter
 class ColoredFormatter(logging.Formatter):
@@ -144,82 +144,82 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
         raise SystemExit(1) from e
 
 def fetch_and_process(collection_name: str, client: Client, repo: str, logger: logging.Logger) -> None:
-  """Fetch and process items from a specific collection for deletion.
-  
-  Args:
-      collection_name: Type of collection to process ('post', 'repost', 'like')
-      client: Authenticated Bluesky client
-      repo: Repository/username to process
-      logger: Logger instance for output
-      
-  Raises:
-      SystemExit: If fetching records fails
-  """
-  # Fetch items
-  collection_url = COLLECTION_PREFIX + collection_name
-
-  logger.info(f"🏁 Starting to process {collection_name}s")
-  try:
-    items = []
-    cursor = None
-
-    while True:
-      result = client.com.atproto.repo.list_records(
-        params={
-          "repo": repo,
-          "collection": collection_url,
-          "limit": BATCH_SIZE,
-          "cursor": cursor,
-          "reverse": True,
-        }
-      )
-
-      items.extend(result.records)
-
-      if not result.cursor:
-        break
-      cursor = result.cursor
-
-    logger.info(f"⭐️ Fetched {len(items)} {collection_name}s total")
-  except exceptions.AtProtocolError as e:
-    logger.error(f"Failed to get {collection_name}s: {e}")
-    raise SystemExit(1) from e
-
-  try:
-    num_days = int(os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO)))
-  except ValueError:
-    logger.error("DAYS_AGO must be a valid integer")
-    raise SystemExit(1)
+    """Fetch and process items from a specific collection for deletion.
     
-  target_date = datetime.now() - timedelta(days=num_days)
-  logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
+    Args:
+        collection_name: Type of collection to process ('post', 'repost', 'like')
+        client: Authenticated Bluesky client
+        repo: Repository/username to process
+        logger: Logger instance for output
+        
+    Raises:
+        SystemExit: If fetching records fails
+    """
+    # Fetch items
+    collection_url = COLLECTION_PREFIX + collection_name
 
-  client_method = f"delete_{collection_name}"
-  num_deleted = 0
-  dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
+    logger.info(f"🏁 Starting to process {collection_name}s")
+    try:
+        items = []
+        cursor = None
 
-  for item in items:
-    # Break early to save some cycles if current post is after target date
-    if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
-      break
+        while True:
+            result = client.com.atproto.repo.list_records(
+                params={
+                    "repo": repo,
+                    "collection": collection_url,
+                    "limit": BATCH_SIZE,
+                    "cursor": cursor,
+                    "reverse": True,
+                }
+            )
 
-    if not dry_run:
-      try:
-        logger.info(f"⏳ Deleting {collection_name}:{item.uri}...")
-        logger.debug(item.model_dump_json(indent=2))
-        getattr(client, client_method)(item.uri)
-        logger.info(f"🎉 {collection_name.title()} deleted successfully!")
-      except exceptions.AtProtocolError as e:
-        logger.error(f"Failed to delete {collection_name}: {e}")
-    else:
-      logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
-      logger.warning(item.model_dump_json(indent=2))
+            items.extend(result.records)
 
-    logger.info(LOG_SEPARATOR)
-    num_deleted += 1
+            if not result.cursor:
+                break
+            cursor = result.cursor
 
-  logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
-  logger.info(f"🚀 All done with {collection_name}s")
+        logger.info(f"⭐️ Fetched {len(items)} {collection_name}s total")
+    except exceptions.AtProtocolError as e:
+        logger.error(f"Failed to get {collection_name}s: {e}")
+        raise SystemExit(1) from e
+
+    try:
+        num_days = int(os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO)))
+    except ValueError:
+        logger.error("DAYS_AGO must be a valid integer")
+        raise SystemExit(1)
+        
+    target_date = datetime.now() - timedelta(days=num_days)
+    logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
+
+    client_method = f"delete_{collection_name}"
+    num_deleted = 0
+    dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
+
+    for item in items:
+        # Break early to save some cycles if current post is after target date
+        if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
+            break
+
+        if not dry_run:
+            try:
+                logger.info(f"⏳ Deleting {collection_name}:{item.uri}...")
+                logger.debug(item.model_dump_json(indent=2))
+                getattr(client, client_method)(item.uri)
+                logger.info(f"🎉 {collection_name.title()} deleted successfully!")
+            except exceptions.AtProtocolError as e:
+                logger.error(f"Failed to delete {collection_name}: {e}")
+        else:
+            logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
+            logger.warning(item.model_dump_json(indent=2))
+
+        logger.info(LOG_SEPARATOR)
+        num_deleted += 1
+
+    logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
+    logger.info(f"🚀 All done with {collection_name}s")
 
 
 def main() -> None:
