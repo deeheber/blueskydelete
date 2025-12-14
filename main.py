@@ -80,9 +80,9 @@ def setup_logging() -> logging.Logger:
     logger = logging.getLogger(__name__)
     logger.setLevel(getattr(logging, log_level))
 
-    # Create console handler with colored formatter
+    # Create console handler with colored formatter including timestamps
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColoredFormatter('%(levelname)s %(message)s'))
+    console_handler.setFormatter(ColoredFormatter('%(asctime)s %(levelname)s %(message)s'))
     logger.addHandler(console_handler)
 
     # Prevent duplicate logs
@@ -203,18 +203,41 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
         if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
             break
 
+        # Enhanced logging with timestamps and emojis for deletion operations
+        item_timestamp = datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+        
         if not dry_run:
             try:
-                logger.info(f"⏳ Deleting {collection_name}:{item.uri}...")
-                logger.debug(item.model_dump_json(indent=2))
+                logger.info(f"⏳ Deleting {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}...")
+                logger.info(f"🔗 URI: {item.uri}")
+                
+                # Debug logging for item details using model_dump_json with indentation
+                logger.debug(f"📋 Item details:\n{item.model_dump_json(indent=2)}")
+                
+                # Perform deletion
                 getattr(client, client_method)(item.uri)
-                logger.info(f"🎉 {collection_name.title()} deleted successfully!")
+                logger.info(f"🎉 {collection_name.title()} deleted successfully! ✅")
+                
             except exceptions.AtProtocolError as e:
-                logger.error(f"Failed to delete {collection_name}: {e}")
+                # Proper exception handling for AtProtocolError during deletions
+                logger.error(f"❌ Failed to delete {collection_name} {item.uri}: {e}")
+                logger.error(f"💥 AtProtocolError details: {str(e)}")
+                # Continue processing other items even if one fails
+                continue
+            except Exception as e:
+                # Handle any other unexpected exceptions
+                logger.error(f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}")
+                continue
         else:
-            logger.warning(f"⏳ Dry run, if run for real this would delete {collection_name} with uri {item.uri}...")
-            logger.warning(item.model_dump_json(indent=2))
+            # Improved dry run logging with warnings and detailed item information
+            logger.warning(f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.warning(f"🔗 URI: {item.uri}")
+            logger.warning(f"📅 Created: {item.value.created_at}")
+            
+            # Debug logging for item details in dry run mode
+            logger.debug(f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}")
 
+        # Addition of LOG_SEPARATOR for better log readability
         logger.info(LOG_SEPARATOR)
         num_deleted += 1
 
