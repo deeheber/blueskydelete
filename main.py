@@ -26,36 +26,49 @@ class ColoredFormatter(logging.Formatter):
         record.levelname = f"{log_color}[{record.levelname}]{self.RESET}"
         return super().format(record)
 
-# Configure logging after dotenv is loaded
-log_level = os.getenv("LOG_LEVEL", "INFO").upper()
-logger = logging.getLogger(__name__)
-logger.setLevel(getattr(logging, log_level))
+def setup_logging() -> logging.Logger:
+    """Set up colored logging with configurable level."""
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    logger = logging.getLogger(__name__)
+    logger.setLevel(getattr(logging, log_level))
 
-# Create console handler with colored formatter
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(ColoredFormatter('%(levelname)s %(message)s'))
-logger.addHandler(console_handler)
+    # Create console handler with colored formatter
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(ColoredFormatter('%(levelname)s %(message)s'))
+    logger.addHandler(console_handler)
 
-# Prevent duplicate logs
-logger.propagate = False
+    # Prevent duplicate logs
+    logger.propagate = False
+    
+    logger.info(f"ℹ️ Log level set to {log_level}")
+    return logger
 
-logger.info(f"ℹ️ Log level set to {log_level}")
 
-# Set Variables
-client = Client()
-repo = os.getenv("USERNAME")
+def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
+    """Authenticate with Bluesky and return client and repo."""
+    client = Client()
+    repo = os.getenv("USERNAME")
+    
+    if not repo:
+        logger.error("USERNAME environment variable not set")
+        raise SystemExit(1)
+    
+    password = os.getenv("PASSWORD")
+    if not password:
+        logger.error("PASSWORD environment variable not set")
+        raise SystemExit(1)
 
-# Login
-logger.info("⏳ Logging in...")
+    logger.info("⏳ Logging in...")
+    
+    try:
+        client.login(repo, password)
+        logger.info("😎 Login successful!")
+        return client, repo
+    except exceptions.AtProtocolError as e:
+        logger.error(f"Failed to login: {e}")
+        raise SystemExit(1) from e
 
-try:
-  client.login(repo, os.getenv("PASSWORD"))
-  logger.info("😎 Login successful!")
-except exceptions.AtProtocolError as e:
-  logger.error(f"Failed to login: {e}")
-  exit()
-
-def fetch_and_process(collection_name: str) -> None:
+def fetch_and_process(collection_name: str, client: Client, repo: str, logger: logging.Logger) -> None:
   # Fetch items
   collection_url = "app.bsky.feed." + collection_name
 
@@ -84,7 +97,7 @@ def fetch_and_process(collection_name: str) -> None:
     logger.info(f"⭐️ Fetched {len(items)} {collection_name}s total")
   except exceptions.AtProtocolError as e:
     logger.error(f"Failed to get {collection_name}s: {e}")
-    exit()
+    raise SystemExit(1) from e
 
   num_days = int(os.getenv("DAYS_AGO", 90))
   target_date = datetime.now() - timedelta(days=num_days)
@@ -117,6 +130,16 @@ def fetch_and_process(collection_name: str) -> None:
   logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if dry_run == False else 'processed'}!")
   logger.info(f"🚀 All done with {collection_name}s")
 
-fetch_and_process("post")
-fetch_and_process("repost")
-fetch_and_process("like")
+
+def main() -> None:
+    """Main function to orchestrate the Bluesky cleanup process."""
+    logger = setup_logging()
+    client, repo = authenticate_client(logger)
+    
+    fetch_and_process("post", client, repo, logger)
+    fetch_and_process("repost", client, repo, logger)
+    fetch_and_process("like", client, repo, logger)
+
+
+if __name__ == "__main__":
+    main()
