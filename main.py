@@ -218,15 +218,23 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
                 getattr(client, client_method)(item.uri)
                 logger.info(f"🎉 {collection_name.title()} deleted successfully! ✅")
                 
+                # Addition of LOG_SEPARATOR for better log readability
+                logger.info(LOG_SEPARATOR)
+                num_deleted += 1  # Only increment on successful deletion
+                
             except exceptions.AtProtocolError as e:
                 # Proper exception handling for AtProtocolError during deletions
                 logger.error(f"❌ Failed to delete {collection_name} {item.uri}: {e}")
                 logger.error(f"💥 AtProtocolError details: {str(e)}")
+                # Addition of LOG_SEPARATOR for better log readability
+                logger.info(LOG_SEPARATOR)
                 # Continue processing other items even if one fails
                 continue
             except Exception as e:
                 # Handle any other unexpected exceptions
                 logger.error(f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}")
+                # Addition of LOG_SEPARATOR for better log readability
+                logger.info(LOG_SEPARATOR)
                 continue
         else:
             # Improved dry run logging with warnings and detailed item information
@@ -237,9 +245,9 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
             # Debug logging for item details in dry run mode
             logger.debug(f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}")
 
-        # Addition of LOG_SEPARATOR for better log readability
-        logger.info(LOG_SEPARATOR)
-        num_deleted += 1
+            # Addition of LOG_SEPARATOR for better log readability
+            logger.info(LOG_SEPARATOR)
+            num_deleted += 1  # Count processed items in dry run mode
 
     logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
     logger.info(f"🚀 All done with {collection_name}s")
