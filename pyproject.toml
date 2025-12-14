@@ -5,8 +5,8 @@ authors = [
   {name = "Danielle Heberling"}
 ]
 dependencies = [
-  "atproto==0.0.61"
+  "atproto==0.0.65"
 ]
 
 [project.optional-dependencies]
-dev = ["python-dotenv==1.1.1"]
+dev = ["python-dotenv==1.2.1"]
