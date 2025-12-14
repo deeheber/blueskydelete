@@ -52,19 +52,32 @@ def setup_logging() -> logging.Logger:
     return logger
 
 
+def validate_environment() -> None:
+    """Validate required environment variables are present."""
+    required_vars = ["USERNAME", "PASSWORD"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+        raise SystemExit(1)
+    
+    # Validate DAYS_AGO if provided
+    days_ago_str = os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO))
+    try:
+        days_ago = int(days_ago_str)
+        if days_ago < 0:
+            print("❌ DAYS_AGO must be a non-negative integer")
+            raise SystemExit(1)
+    except ValueError:
+        print(f"❌ DAYS_AGO must be a valid integer, got: {days_ago_str}")
+        raise SystemExit(1)
+
+
 def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
     """Authenticate with Bluesky and return client and repo."""
     client = Client()
-    repo = os.getenv("USERNAME")
-    
-    if not repo:
-        logger.error("USERNAME environment variable not set")
-        raise SystemExit(1)
-    
-    password = os.getenv("PASSWORD")
-    if not password:
-        logger.error("PASSWORD environment variable not set")
-        raise SystemExit(1)
+    repo = os.getenv("USERNAME", "")
+    password = os.getenv("PASSWORD", "")
 
     logger.info("⏳ Logging in...")
     
@@ -108,7 +121,12 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
     logger.error(f"Failed to get {collection_name}s: {e}")
     raise SystemExit(1) from e
 
-  num_days = int(os.getenv("DAYS_AGO", DEFAULT_DAYS_AGO))
+  try:
+    num_days = int(os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO)))
+  except ValueError:
+    logger.error("DAYS_AGO must be a valid integer")
+    raise SystemExit(1)
+    
   target_date = datetime.now() - timedelta(days=num_days)
   logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
 
@@ -142,6 +160,7 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
 
 def main() -> None:
     """Main function to orchestrate the Bluesky cleanup process."""
+    validate_environment()
     logger = setup_logging()
     client, repo = authenticate_client(logger)
     
