@@ -218,15 +218,19 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
                 getattr(client, client_method)(item.uri)
                 logger.info(f"🎉 {collection_name.title()} deleted successfully! ✅")
                 
+                # Only increment counter when deletion actually succeeds
+                num_deleted += 1
+                
             except exceptions.AtProtocolError as e:
                 # Proper exception handling for AtProtocolError during deletions
                 logger.error(f"❌ Failed to delete {collection_name} {item.uri}: {e}")
                 logger.error(f"💥 AtProtocolError details: {str(e)}")
-                # Continue processing other items even if one fails
+                # Continue processing other items even if one fails - do NOT increment counter
                 continue
             except Exception as e:
                 # Handle any other unexpected exceptions
                 logger.error(f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}")
+                # Continue processing other items even if one fails - do NOT increment counter
                 continue
         else:
             # Improved dry run logging with warnings and detailed item information
@@ -236,10 +240,12 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
             
             # Debug logging for item details in dry run mode
             logger.debug(f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}")
+            
+            # Only increment counter for dry run items that would be processed
+            num_deleted += 1
 
         # Addition of LOG_SEPARATOR for better log readability
         logger.info(LOG_SEPARATOR)
-        num_deleted += 1
 
     logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
     logger.info(f"🚀 All done with {collection_name}s")
