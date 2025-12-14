@@ -44,8 +44,8 @@ else:
     from dotenv import load_dotenv
     load_dotenv()
 
-# Custom colored formatter
-class ColoredFormatter(logging.Formatter):
+# Custom color formatter
+class ColorFormatter(logging.Formatter):
     """Custom logging formatter that adds colors to log levels for better readability."""
     
     COLORS = {
@@ -82,7 +82,7 @@ def setup_logging() -> logging.Logger:
 
     # Create console handler with colored formatter including timestamps
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColoredFormatter('%(asctime)s %(levelname)s %(message)s'))
+    console_handler.setFormatter(ColorFormatter('%(asctime)s %(levelname)s %(message)s'))
     logger.addHandler(console_handler)
 
     # Prevent duplicate logs
@@ -267,6 +267,8 @@ def main() -> None:
     fetch_and_process("repost", client, repo, logger)
     fetch_and_process("like", client, repo, logger)
 
+    logger.info(LOG_SEPARATOR)
+    logger.info("✨ All done!")
 
 if __name__ == "__main__":
     main()
