@@ -1,6 +1,7 @@
 import os
 import logging
 from datetime import datetime, timedelta
+from typing import Optional
 from atproto import Client, exceptions
 
 if os.getenv("CI"):
@@ -20,7 +21,7 @@ class ColoredFormatter(logging.Formatter):
     }
     RESET = '\033[0m'
     
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_color = self.COLORS.get(record.levelname, '')
         record.levelname = f"{log_color}[{record.levelname}]{self.RESET}"
         return super().format(record)
@@ -54,7 +55,7 @@ except exceptions.AtProtocolError as e:
   logger.error(f"Failed to login: {e}")
   exit()
 
-def fetch_and_process(collection_name):
+def fetch_and_process(collection_name: str) -> None:
   # Fetch items
   collection_url = "app.bsky.feed." + collection_name
 
