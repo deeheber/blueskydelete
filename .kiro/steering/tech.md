@@ -30,10 +30,13 @@
 ```bash
 # Create and activate virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+
+# Activate environment
+# macOS/Linux: source .venv/bin/activate
+# Windows: .venv\Scripts\activate
 
 # Install for development (includes dotenv)
-pip install -e .'[dev]'
+pip install -e .[dev]
 
 # Install for production
 pip install -e .

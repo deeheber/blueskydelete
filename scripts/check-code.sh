@@ -10,9 +10,12 @@ echo "=================================="
 
 # Check if we're in a virtual environment
 if [[ -z "$VIRTUAL_ENV" ]]; then
-    echo "⚠️  Warning: Not in a virtual environment"
-    echo "   Consider running: source .venv/bin/activate"
+    echo "❌ Error: Not in a virtual environment"
+    echo "   Please activate your virtual environment first:"
+    echo "   macOS/Linux: source .venv/bin/activate"
+    echo "   Windows: .venv\\Scripts\\activate"
     echo ""
+    exit 1
 fi
 
 # Find all Python files

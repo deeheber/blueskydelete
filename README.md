@@ -14,16 +14,20 @@
 - 📅 **Flexible date ranges** - Configure how far back to delete with `DAYS_AGO`
 - 📝 **Multiple content types** - Handles posts, reposts, and likes
 
-## 🚀 Quick Start (macOS)
+## 🚀 Quick Start
 
 1. 📥 **Clone this repo**
 2. 🐍 **Check Python version** - See `.python-version` file (other versions might work)
 3. 🏠 **Create virtual environment**: `python3 -m venv .venv`
-4. ⚡ **Activate environment**: `source .venv/bin/activate`
+4. ⚡ **Activate environment**:
+   - **macOS/Linux**: `source .venv/bin/activate`
+   - **Windows**: `.venv\Scripts\activate`
 5. 📦 **Install dependencies**:
    - Development: `pip install -e .'[dev]'`
    - Production: `pip install -e .`
-6. ⚙️ **Setup environment**: `touch .env & cp .env.sample .env` then edit `.env` with your values
+6. ⚙️ **Setup environment**:
+   - **macOS/Linux**: `cp .env.sample .env` then edit `.env` with your values
+   - **Windows**: `copy .env.sample .env` then edit `.env` with your values
 7. 🎬 **Run script**: `python main.py`
 
 ## ⚙️ Environment Variables
