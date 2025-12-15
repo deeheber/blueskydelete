@@ -1,5 +1,5 @@
-name: cleanup feed
-run-name: ${{ github.actor }} has run the cleanup-feed trigger
+name: Cleanup Feed
+
 on:
   schedule:
     - cron: "0 5 * * 5"
@@ -12,22 +12,22 @@ concurrency:
 jobs:
   cleanup-feed:
     runs-on: ubuntu-latest
+
     steps:
-      - name: checkout
+      - name: Checkout code
         uses: actions/checkout@v6
-      - name: Setup Python
+
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version-file: .python-version
+          python-version-file: ".python-version"
+          cache: "pip"
+
       - name: Install dependencies
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -e .
+        run: pip install -e .
+
       - name: Delete old posts, reposts, and likes
-        run: |
-          source .venv/bin/activate
-          python ./main.py
+        run: python main.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}

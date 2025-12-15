@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Code Quality Check",
+  "description": "Runs the code quality check script when Python files are edited to ensure code standards are maintained",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Please run the code quality check script by executing ./scripts/check-code.sh and report the results. If there are any issues found, please explain what needs to be fixed."
+  },
+  "workspaceFolderName": "blueskydelete",
+  "shortName": "code-quality-check"
+}

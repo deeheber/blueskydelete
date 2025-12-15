@@ -24,9 +24,10 @@ Usage:
 Author: Danielle Heberling
 """
 
-import os
 import logging
+import os
 from datetime import datetime, timedelta
+
 from atproto import Client, exceptions
 
 DEFAULT_LOG_LEVEL = "INFO"
@@ -36,40 +37,47 @@ BATCH_SIZE = 100
 COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
 
-if os.getenv("CI"):
-    print("Running in CI...skipping dotenv import.")
-else:
-    from dotenv import load_dotenv
-    load_dotenv()
+if not os.getenv("CI"):
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+    except ImportError:
+        print(
+            "⚠️ Warning: python-dotenv not installed. Install with 'pip install -e .[dev]' for .env file support"
+        )
+        pass
+
 
 class ColorFormatter(logging.Formatter):
     """Custom logging formatter that adds colors to log levels for better readability."""
-    
+
     COLORS = {
-        'DEBUG': '\033[38;5;208m',  # Orange
-        'INFO': '\033[36m',         # Cyan
-        'WARNING': '\033[33m',      # Yellow
-        'ERROR': '\033[31m',        # Red
-        'CRITICAL': '\033[35m',     # Magenta
+        "DEBUG": "\033[38;5;208m",  # Orange
+        "INFO": "\033[36m",  # Cyan
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
     }
-    RESET = '\033[0m'
-    
+    RESET = "\033[0m"
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record with color codes for the log level.
-        
+
         Args:
             record: The log record to format
-            
+
         Returns:
             Formatted log message with color codes
         """
-        log_color = self.COLORS.get(record.levelname, '')
+        log_color = self.COLORS.get(record.levelname, "")
         record.levelname = f"{log_color}[{record.levelname}]{self.RESET}"
         return super().format(record)
 
+
 def setup_logging() -> logging.Logger:
     """Set up color logging with configurable level.
-    
+
     Returns:
         Configured logger instance
     """
@@ -78,26 +86,28 @@ def setup_logging() -> logging.Logger:
     logger.setLevel(getattr(logging, log_level))
 
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColorFormatter('%(levelname)s %(message)s'))
+    console_handler.setFormatter(ColorFormatter("%(levelname)s %(message)s"))
     logger.addHandler(console_handler)
 
     logger.propagate = False
-    
+
     logger.info(f"ℹ️ Log level set to {log_level}")
     return logger
 
 
 def validate_environment() -> None:
     """Validate required environment variables are present and valid.
-    
+
     Raises:
         SystemExit: If required variables are missing or invalid
     """
     required_vars = ["USERNAME", "PASSWORD"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
+
     if missing_vars:
-        print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+        print(
+            f"❌ Missing required environment variables: {', '.join(missing_vars)}"
+        )
         raise SystemExit(1)
 
     days_ago_str = os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO))
@@ -108,18 +118,18 @@ def validate_environment() -> None:
             raise SystemExit(1)
     except ValueError:
         print(f"❌ DAYS_AGO must be a valid integer, got: {days_ago_str}")
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
 
 def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
     """Authenticate with Bluesky and return client and repo.
-    
+
     Args:
         logger: Logger instance for output
-        
+
     Returns:
         Tuple of (authenticated_client, repo_name)
-        
+
     Raises:
         SystemExit: If authentication fails
     """
@@ -128,7 +138,7 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
     password = os.getenv("PASSWORD", "")
 
     logger.info("⏳ Logging in...")
-    
+
     try:
         client.login(repo, password)
         logger.info("😎 Login successful!")
@@ -137,15 +147,18 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
         logger.error(f"Failed to login: {e}")
         raise SystemExit(1) from e
 
-def fetch_and_process(collection_name: str, client: Client, repo: str, logger: logging.Logger) -> None:
+
+def fetch_and_process(
+    collection_name: str, client: Client, repo: str, logger: logging.Logger
+) -> None:
     """Fetch and process items from a specific collection for deletion.
-    
+
     Args:
         collection_name: Type of collection to process ('post', 'repost', 'like')
         client: Authenticated Bluesky client
         repo: Repository/username to process
         logger: Logger instance for output
-        
+
     Raises:
         SystemExit: If fetching records fails
     """
@@ -182,10 +195,12 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
         num_days = int(os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO)))
     except ValueError:
         logger.error("DAYS_AGO must be a valid integer")
-        raise SystemExit(1)
-        
+        raise SystemExit(1) from None
+
     target_date = datetime.now() - timedelta(days=num_days)
-    logger.info(f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}")
+    logger.info(
+        f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}"
+    )
 
     client_method = f"delete_{collection_name}"
     num_deleted = 0
@@ -193,66 +208,88 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
 
     for item in items:
         # Break early to save some cycles if current post is after target date
-        if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
+        if (
+            datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+            > target_date
+        ):
             break
 
-        item_timestamp = datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
-        
+        item_timestamp = datetime.strptime(
+            item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+
         if not dry_run:
             try:
-                logger.info(f"⏳ Deleting {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}...")
+                logger.info(
+                    f"⏳ Deleting {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}..."
+                )
                 logger.info(f"🔗 URI: {item.uri}")
-                
+
                 # Debug logging for item details using model_dump_json with indentation
-                logger.debug(f"📋 Item details:\n{item.model_dump_json(indent=2)}")
-                
+                logger.debug(
+                    f"📋 Item details:\n{item.model_dump_json(indent=2)}"
+                )
+
                 # Perform deletion
                 getattr(client, client_method)(item.uri)
-                logger.info(f"🎉 {collection_name.title()} deleted successfully! ✅")
+                logger.info(
+                    f"🎉 {collection_name.title()} deleted successfully! ✅"
+                )
 
                 logger.info(LOG_SEPARATOR)
                 num_deleted += 1
-                
+
             except exceptions.AtProtocolError as e:
-                logger.error(f"❌ Failed to delete {collection_name} {item.uri}: {e}")
+                logger.error(
+                    f"❌ Failed to delete {collection_name} {item.uri}: {e}"
+                )
                 logger.error(f"💥 AtProtocolError details: {str(e)}")
                 logger.info(LOG_SEPARATOR)
                 # Continue processing other items even if one fails
                 continue
             except Exception as e:
-                logger.error(f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}")
+                logger.error(
+                    f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}"
+                )
                 logger.info(LOG_SEPARATOR)
                 continue
         else:
-            logger.warning(f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.warning(
+                f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
             logger.warning(f"🔗 URI: {item.uri}")
             logger.warning(f"📅 Created: {item.value.created_at}")
 
-            logger.debug(f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}")
+            logger.debug(
+                f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}"
+            )
 
             logger.info(LOG_SEPARATOR)
             num_deleted += 1
 
-    logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
+    logger.info(
+        f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!"
+    )
     logger.info(f"🚀 All done with {collection_name}s")
+    logger.info(LOG_SEPARATOR)
 
 
 def main() -> None:
     """Main function to orchestrate the Bluesky cleanup process.
-    
+
     Validates environment, sets up logging, authenticates with Bluesky,
     and processes posts, reposts, and likes for deletion based on age.
     """
     validate_environment()
     logger = setup_logging()
     client, repo = authenticate_client(logger)
-    
+
     fetch_and_process("post", client, repo, logger)
     fetch_and_process("repost", client, repo, logger)
     fetch_and_process("like", client, repo, logger)
 
-    logger.info(LOG_SEPARATOR)
     logger.info("✨ All done!")
+
 
 if __name__ == "__main__":
     main()

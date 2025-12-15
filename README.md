@@ -14,16 +14,20 @@
 - 📅 **Flexible date ranges** - Configure how far back to delete with `DAYS_AGO`
 - 📝 **Multiple content types** - Handles posts, reposts, and likes
 
-## 🚀 Quick Start (macOS)
+## 🚀 Quick Start
 
 1. 📥 **Clone this repo**
 2. 🐍 **Check Python version** - See `.python-version` file (other versions might work)
 3. 🏠 **Create virtual environment**: `python3 -m venv .venv`
-4. ⚡ **Activate environment**: `source .venv/bin/activate`
+4. ⚡ **Activate environment**:
+   - **macOS/Linux**: `source .venv/bin/activate`
+   - **Windows**: `.venv\Scripts\activate`
 5. 📦 **Install dependencies**:
    - Development: `pip install -e .'[dev]'`
    - Production: `pip install -e .`
-6. ⚙️ **Setup environment**: `touch .env & cp .env.sample .env` then edit `.env` with your values
+6. ⚙️ **Setup environment**:
+   - **macOS/Linux**: `cp .env.sample .env` then edit `.env` with your values
+   - **Windows**: `copy .env.sample .env` then edit `.env` with your values
 7. 🎬 **Run script**: `python main.py`
 
 ## ⚙️ Environment Variables
@@ -94,3 +98,31 @@ schedule:
 - `0 6 * * 1,3,5` - 📋 Monday, Wednesday, Friday at 6 AM
 
 💡 **Note**: The workflow uses colored logging output which displays nicely in GitHub Actions logs, making it seamless to monitor the cleanup process.
+
+## 🔧 Development
+
+### Code Quality
+
+The project includes automated code quality checks using:
+
+- **Black** - Code formatting
+- **Ruff** - Fast Python linter with auto-fix
+- **MyPy** - Static type checking
+
+**Run checks locally:**
+
+```bash
+# Run all checks with auto-fix
+./scripts/check-code.sh
+
+# Individual tools
+black .                    # Format code
+ruff check --fix .         # Lint with auto-fix
+mypy .                     # Type check
+```
+
+**CI Integration:**
+
+- Code quality checks run automatically on pull requests and main branch pushes
+- All checks must pass before merging
+- Uses the same tools as local development for consistency
