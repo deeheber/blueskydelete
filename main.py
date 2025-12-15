@@ -36,11 +36,13 @@ BATCH_SIZE = 100
 COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
 
-if os.getenv("CI"):
-    print("Running in CI...skipping dotenv import.")
-else:
-    from dotenv import load_dotenv
-    load_dotenv()
+if not os.getenv("CI"):
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        print("⚠️ Warning: python-dotenv not installed. Install with 'pip install -e .[dev]' for .env file support")
+        pass
 
 class ColorFormatter(logging.Formatter):
     """Custom logging formatter that adds colors to log levels for better readability."""
