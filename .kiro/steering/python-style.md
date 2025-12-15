@@ -155,7 +155,55 @@ except SpecificError as e:
 - Don't compare boolean values using `==`
 - Use `if condition:` not `if condition == True:`
 
+## Tool Configuration
+
+### Black (Code Formatter)
+
+- **Line length**: 79 characters (configured in pyproject.toml)
+- **Target version**: Python 3.13
+- **Auto-formatting**: Handles all whitespace, quotes, and formatting decisions
+- **Usage**: `black .` formats all Python files
+
+### Ruff (Linter)
+
+- **Line length**: 79 characters (matches Black)
+- **Target version**: Python 3.13
+- **Enabled rules**:
+  - E/W: pycodestyle errors and warnings
+  - F: pyflakes (unused imports, undefined names)
+  - I: isort (import sorting)
+  - B: flake8-bugbear (common bugs)
+  - C4: flake8-comprehensions
+  - UP: pyupgrade (modern Python syntax)
+- **Auto-fix**: `ruff check --fix .` fixes many issues automatically
+- **Ignored**: E501 (line too long) - handled by Black
+
+### MyPy (Type Checker)
+
+- **Strict mode**: Enabled for comprehensive type checking
+- **Required**: All functions must have type hints
+- **Configuration**:
+  - `disallow_untyped_defs = true`
+  - `disallow_incomplete_defs = true`
+  - `warn_return_any = true`
+  - `strict_equality = true`
+- **Third-party**: atproto imports ignored (no type stubs available)
+
 ## Project-Specific Conventions
+
+### Type Hints
+
+- **Required**: All function signatures must include type hints
+- **Return types**: Always specify, use `None` for procedures
+- **Complex types**: Import from `typing` module
+
+```python
+from typing import Optional, List, Dict, Any
+
+def process_data(items: List[Dict[str, Any]]) -> Optional[int]:
+    """Process data and return count or None if failed."""
+    pass
+```
 
 ### Environment Variables
 
