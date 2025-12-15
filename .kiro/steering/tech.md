@@ -17,6 +17,12 @@
 - **CI/CD**: GitHub Actions for automated execution
 - **Secrets management**: GitHub repository secrets and variables
 
+## Code Quality Tools
+
+- **Black**: Code formatter for consistent style
+- **Ruff**: Fast Python linter with auto-fix capabilities
+- **MyPy**: Static type checker for type safety
+
 ## Common Commands
 
 ### Development Setup
@@ -31,6 +37,18 @@ pip install -e .'[dev]'
 
 # Install for production
 pip install -e .
+```
+
+### Code Quality
+
+```bash
+# Run all quality checks with auto-fix
+./scripts/check-code.sh
+
+# Individual tools
+black .                    # Format code
+ruff check --fix .         # Lint with auto-fix
+mypy .                     # Type check
 ```
 
 ### Running the Application

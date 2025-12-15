@@ -15,9 +15,12 @@ blueskydelete/
 ├── .venv/               # Virtual environment (gitignored)
 ├── __pycache__/         # Python bytecode cache (gitignored)
 ├── blueskydelete.egg-info/  # Package metadata (generated, gitignored)
+├── scripts/
+│   └── check-code.sh     # Code quality automation script
 └── .github/
     └── workflows/
-        └── cleanup-feed.yml  # GitHub Actions automation
+        ├── cleanup-feed.yml   # Scheduled content cleanup
+        └── code-quality.yml   # CI code quality checks
 ```
 
 ## Architecture Patterns
@@ -33,6 +36,12 @@ blueskydelete/
 - **Environment-first**: All configuration via environment variables
 - **Template-based**: `.env.sample` provides configuration template
 - **CI-friendly**: GitHub Actions uses repository secrets/variables
+
+### Code Quality Integration
+
+- **Automated checks**: CI runs Black, Ruff, and MyPy on all PRs
+- **Local script**: `./scripts/check-code.sh` for development workflow
+- **Consistent tooling**: Same tools used locally and in CI
 
 ### Error Handling
 

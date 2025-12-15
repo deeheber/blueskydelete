@@ -94,3 +94,31 @@ schedule:
 - `0 6 * * 1,3,5` - 📋 Monday, Wednesday, Friday at 6 AM
 
 💡 **Note**: The workflow uses colored logging output which displays nicely in GitHub Actions logs, making it seamless to monitor the cleanup process.
+
+## 🔧 Development
+
+### Code Quality
+
+The project includes automated code quality checks using:
+
+- **Black** - Code formatting
+- **Ruff** - Fast Python linter with auto-fix
+- **MyPy** - Static type checking
+
+**Run checks locally:**
+
+```bash
+# Run all checks with auto-fix
+./scripts/check-code.sh
+
+# Individual tools
+black .                    # Format code
+ruff check --fix .         # Lint with auto-fix
+mypy .                     # Type check
+```
+
+**CI Integration:**
+
+- Code quality checks run automatically on pull requests and main branch pushes
+- All checks must pass before merging
+- Uses the same tools as local development for consistency
