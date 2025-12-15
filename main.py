@@ -271,6 +271,7 @@ def fetch_and_process(
         f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!"
     )
     logger.info(f"🚀 All done with {collection_name}s")
+    logger.info(LOG_SEPARATOR)
 
 
 def main() -> None:
@@ -287,7 +288,6 @@ def main() -> None:
     fetch_and_process("repost", client, repo, logger)
     fetch_and_process("like", client, repo, logger)
 
-    logger.info(LOG_SEPARATOR)
     logger.info("✨ All done!")
 
 
