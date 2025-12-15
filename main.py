@@ -27,7 +27,6 @@ Author: Danielle Heberling
 import os
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from atproto import Client, exceptions
 
 DEFAULT_LOG_LEVEL = "INFO"
