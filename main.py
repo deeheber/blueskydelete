@@ -30,7 +30,6 @@ from datetime import datetime, timedelta
 from typing import Optional
 from atproto import Client, exceptions
 
-# Constants
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_DAYS_AGO = 90
 DEFAULT_DRY_RUN = "true"
@@ -44,7 +43,6 @@ else:
     from dotenv import load_dotenv
     load_dotenv()
 
-# Custom color formatter
 class ColorFormatter(logging.Formatter):
     """Custom logging formatter that adds colors to log levels for better readability."""
     
@@ -71,7 +69,7 @@ class ColorFormatter(logging.Formatter):
         return super().format(record)
 
 def setup_logging() -> logging.Logger:
-    """Set up colored logging with configurable level.
+    """Set up color logging with configurable level.
     
     Returns:
         Configured logger instance
@@ -80,12 +78,10 @@ def setup_logging() -> logging.Logger:
     logger = logging.getLogger(__name__)
     logger.setLevel(getattr(logging, log_level))
 
-    # Create console handler with colored formatter including timestamps
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColorFormatter('%(asctime)s %(levelname)s %(message)s'))
+    console_handler.setFormatter(ColorFormatter('%(levelname)s %(message)s'))
     logger.addHandler(console_handler)
 
-    # Prevent duplicate logs
     logger.propagate = False
     
     logger.info(f"ℹ️ Log level set to {log_level}")
@@ -104,8 +100,7 @@ def validate_environment() -> None:
     if missing_vars:
         print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
         raise SystemExit(1)
-    
-    # Validate DAYS_AGO if provided
+
     days_ago_str = os.getenv("DAYS_AGO", str(DEFAULT_DAYS_AGO))
     try:
         days_ago = int(days_ago_str)
@@ -155,7 +150,6 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
     Raises:
         SystemExit: If fetching records fails
     """
-    # Fetch items
     collection_url = COLLECTION_PREFIX + collection_name
 
     logger.info(f"🏁 Starting to process {collection_name}s")
@@ -203,7 +197,6 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
         if datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ") > target_date:
             break
 
-        # Enhanced logging with timestamps and emojis for deletion operations
         item_timestamp = datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
         
         if not dry_run:
@@ -217,37 +210,29 @@ def fetch_and_process(collection_name: str, client: Client, repo: str, logger: l
                 # Perform deletion
                 getattr(client, client_method)(item.uri)
                 logger.info(f"🎉 {collection_name.title()} deleted successfully! ✅")
-                
-                # Addition of LOG_SEPARATOR for better log readability
+
                 logger.info(LOG_SEPARATOR)
-                num_deleted += 1  # Only increment on successful deletion
+                num_deleted += 1
                 
             except exceptions.AtProtocolError as e:
-                # Proper exception handling for AtProtocolError during deletions
                 logger.error(f"❌ Failed to delete {collection_name} {item.uri}: {e}")
                 logger.error(f"💥 AtProtocolError details: {str(e)}")
-                # Addition of LOG_SEPARATOR for better log readability
                 logger.info(LOG_SEPARATOR)
                 # Continue processing other items even if one fails
                 continue
             except Exception as e:
-                # Handle any other unexpected exceptions
                 logger.error(f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}")
-                # Addition of LOG_SEPARATOR for better log readability
                 logger.info(LOG_SEPARATOR)
                 continue
         else:
-            # Improved dry run logging with warnings and detailed item information
             logger.warning(f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
             logger.warning(f"🔗 URI: {item.uri}")
             logger.warning(f"📅 Created: {item.value.created_at}")
-            
-            # Debug logging for item details in dry run mode
+
             logger.debug(f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}")
 
-            # Addition of LOG_SEPARATOR for better log readability
             logger.info(LOG_SEPARATOR)
-            num_deleted += 1  # Count processed items in dry run mode
+            num_deleted += 1
 
     logger.info(f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!")
     logger.info(f"🚀 All done with {collection_name}s")
