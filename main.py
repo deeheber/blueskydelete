@@ -24,11 +24,13 @@ Usage:
 Author: Danielle Heberling
 """
 
+import json
 import logging
 import os
 from datetime import datetime, timedelta
+from typing import Any
 
-from atproto import Client, exceptions
+import requests
 
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_DAYS_AGO = 90
@@ -36,6 +38,7 @@ DEFAULT_DRY_RUN = "true"
 BATCH_SIZE = 100
 COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
+BSKY_ENTRYWAY = "https://bsky.social"
 
 if not os.getenv("CI"):
     try:
@@ -121,41 +124,51 @@ def validate_environment() -> None:
         raise SystemExit(1) from None
 
 
-def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
-    """Authenticate with Bluesky and return client and repo.
+def authenticate_client(
+    logger: logging.Logger,
+) -> tuple[dict[str, Any], str]:
+    """Authenticate with Bluesky and return session and repo.
 
     Args:
         logger: Logger instance for output
 
     Returns:
-        Tuple of (authenticated_client, repo_name)
+        Tuple of (session_dict, repo_name)
 
     Raises:
         SystemExit: If authentication fails
     """
-    client = Client()
     repo = os.getenv("USERNAME", "")
     password = os.getenv("PASSWORD", "")
 
     logger.info("⏳ Logging in...")
 
     try:
-        client.login(repo, password)
+        resp = requests.post(
+            f"{BSKY_ENTRYWAY}/xrpc/com.atproto.server.createSession",
+            json={"identifier": repo, "password": password},
+        )
+        resp.raise_for_status()
         logger.info("😎 Login successful!")
-        return client, repo
-    except exceptions.AtProtocolError as e:
+        return resp.json(), repo
+    except requests.HTTPError as e:
         logger.error(f"Failed to login: {e}")
         raise SystemExit(1) from e
 
 
 def fetch_and_process(
-    collection_name: str, client: Client, repo: str, logger: logging.Logger
+    collection_name: str,
+    session: dict[str, Any],
+    repo: str,
+    logger: logging.Logger,
 ) -> None:
-    """Fetch and process items from a specific collection for deletion.
+    """Fetch and process items from a collection for deletion.
 
     Args:
-        collection_name: Type of collection to process ('post', 'repost', 'like')
-        client: Authenticated Bluesky client
+        collection_name: Type of collection ('post', 'repost',
+            'like')
+        session: Authenticated session dict with accessJwt and
+            did
         repo: Repository/username to process
         logger: Logger instance for output
 
@@ -164,30 +177,41 @@ def fetch_and_process(
     """
     collection_url = COLLECTION_PREFIX + collection_name
 
+    access_token = session["accessJwt"]
+    did = session["did"]
+    headers = {"Authorization": f"Bearer {access_token}"}
+
     logger.info(f"🏁 Starting to process {collection_name}s")
     try:
-        items = []
-        cursor = None
+        items: list[dict[str, Any]] = []
+        cursor: str | None = None
 
         while True:
-            result = client.com.atproto.repo.list_records(
-                params={
-                    "repo": repo,
-                    "collection": collection_url,
-                    "limit": BATCH_SIZE,
-                    "cursor": cursor,
-                    "reverse": True,
-                }
+            params: dict[str, Any] = {
+                "repo": did,
+                "collection": collection_url,
+                "limit": BATCH_SIZE,
+                "reverse": True,
+            }
+            if cursor:
+                params["cursor"] = cursor
+
+            resp = requests.get(
+                f"{BSKY_ENTRYWAY}/xrpc/" "com.atproto.repo.listRecords",
+                params=params,
+                headers=headers,
             )
+            resp.raise_for_status()
+            data = resp.json()
 
-            items.extend(result.records)
+            items.extend(data["records"])
 
-            if not result.cursor:
+            if not data.get("cursor"):
                 break
-            cursor = result.cursor
+            cursor = data["cursor"]
 
         logger.info(f"⭐️ Fetched {len(items)} {collection_name}s total")
-    except exceptions.AtProtocolError as e:
+    except requests.HTTPError as e:
         logger.error(f"Failed to get {collection_name}s: {e}")
         raise SystemExit(1) from e
 
@@ -202,91 +226,113 @@ def fetch_and_process(
         f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}"
     )
 
-    client_method = f"delete_{collection_name}"
     num_deleted = 0
     dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
 
     for item in items:
-        # Break early to save some cycles if current post is after target date
+        # Break early to save cycles if current post
+        # is after target date
         if (
-            datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+            datetime.strptime(
+                item["value"]["createdAt"],
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+            )
             > target_date
         ):
             break
 
         item_timestamp = datetime.strptime(
-            item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+            item["value"]["createdAt"],
+            "%Y-%m-%dT%H:%M:%S.%fZ",
         )
 
         if not dry_run:
             try:
                 logger.info(
-                    f"⏳ Deleting {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}..."
+                    f"⏳ Deleting {collection_name} from "
+                    f"{item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}..."
                 )
-                logger.info(f"🔗 URI: {item.uri}")
+                logger.info(f"🔗 URI: {item['uri']}")
 
-                # Debug logging for item details using model_dump_json with indentation
                 logger.debug(
-                    f"📋 Item details:\n{item.model_dump_json(indent=2)}"
+                    f"📋 Item details:\n" f"{json.dumps(item, indent=2)}"
                 )
 
-                # Perform deletion
-                getattr(client, client_method)(item.uri)
+                # Extract rkey from the AT URI
+                # URI format: at://did:plc:xxx/collection/rkey
+                rkey = item["uri"].rsplit("/", 1)[-1]
+
+                resp = requests.post(
+                    f"{BSKY_ENTRYWAY}/xrpc/" "com.atproto.repo.deleteRecord",
+                    json={
+                        "repo": did,
+                        "collection": collection_url,
+                        "rkey": rkey,
+                    },
+                    headers=headers,
+                )
+                resp.raise_for_status()
                 logger.info(
-                    f"🎉 {collection_name.title()} deleted successfully! ✅"
+                    f"🎉 {collection_name.title()} deleted" " successfully! ✅"
                 )
 
                 logger.info(LOG_SEPARATOR)
                 num_deleted += 1
 
-            except exceptions.AtProtocolError as e:
+            except requests.HTTPError as e:
                 logger.error(
-                    f"❌ Failed to delete {collection_name} {item.uri}: {e}"
+                    f"❌ Failed to delete {collection_name}"
+                    f" {item['uri']}: {e}"
                 )
-                logger.error(f"💥 AtProtocolError details: {str(e)}")
+                logger.error(f"💥 HTTPError details: {e!s}")
                 logger.info(LOG_SEPARATOR)
-                # Continue processing other items even if one fails
+                # Continue processing other items
                 continue
             except Exception as e:
                 logger.error(
-                    f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}"
+                    f"💀 Unexpected error deleting"
+                    f" {collection_name} {item['uri']}: {e}"
                 )
                 logger.info(LOG_SEPARATOR)
                 continue
         else:
             logger.warning(
-                f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+                f"🔄 DRY RUN: Would delete {collection_name}"
+                f" from"
+                f" {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
             )
-            logger.warning(f"🔗 URI: {item.uri}")
-            logger.warning(f"📅 Created: {item.value.created_at}")
+            logger.warning(f"🔗 URI: {item['uri']}")
+            logger.warning(f"📅 Created: {item['value']['createdAt']}")
 
             logger.debug(
-                f"📋 Item details (dry run):\n{item.model_dump_json(indent=2)}"
+                f"📋 Item details (dry run):\n" f"{json.dumps(item, indent=2)}"
             )
 
             logger.info(LOG_SEPARATOR)
             num_deleted += 1
 
     logger.info(
-        f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!"
+        f"✅ {num_deleted} {collection_name}s"
+        f" {'deleted' if not dry_run else 'processed'}!"
     )
     logger.info(f"🚀 All done with {collection_name}s")
     logger.info(LOG_SEPARATOR)
 
 
 def main() -> None:
-    """Main function to orchestrate the Bluesky cleanup process.
+    """Main function to orchestrate the Bluesky cleanup.
 
-    Validates environment, sets up logging, authenticates with Bluesky,
-    and processes posts, reposts, and likes for deletion based on age.
+    Validates environment, sets up logging, authenticates
+    with Bluesky, and processes posts, reposts, and likes
+    for deletion based on age.
     """
     validate_environment()
     logger = setup_logging()
-    client, repo = authenticate_client(logger)
+    session, repo = authenticate_client(logger)
 
-    fetch_and_process("post", client, repo, logger)
-    fetch_and_process("repost", client, repo, logger)
-    fetch_and_process("like", client, repo, logger)
+    fetch_and_process("post", session, repo, logger)
+    fetch_and_process("repost", session, repo, logger)
+    fetch_and_process("like", session, repo, logger)
 
     logger.info("✨ All done!")
 
