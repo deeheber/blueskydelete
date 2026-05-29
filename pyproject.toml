@@ -1,6 +1,7 @@
 [project]
 name = "blueskydelete"
 version = "0.1.0"
+requires-python = ">=3.13"
 authors = [
   {name = "Danielle Heberling"}
 ]
@@ -8,9 +9,8 @@ dependencies = [
   "atproto==0.0.65"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "python-dotenv==1.2.1",
     "black==25.12.0",
     "mypy==1.19.0",
     "ruff==0.14.9"
