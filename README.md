@@ -16,19 +16,15 @@
 
 ## 🚀 Quick Start
 
+> 💡 This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh` or see the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/).
+
 1. 📥 **Clone this repo**
 2. 🐍 **Check Python version** - See `.python-version` file (other versions might work)
-3. 🏠 **Create virtual environment**: `python3 -m venv .venv`
-4. ⚡ **Activate environment**:
-   - **macOS/Linux**: `source .venv/bin/activate`
-   - **Windows**: `.venv\Scripts\activate`
-5. 📦 **Install dependencies**:
-   - Development: `pip install -e .'[dev]'`
-   - Production: `pip install -e .`
-6. ⚙️ **Setup environment**:
+3. 📦 **Install dependencies**: `uv sync`
+4. ⚙️ **Setup environment**:
    - **macOS/Linux**: `cp .env.sample .env` then edit `.env` with your values
    - **Windows**: `copy .env.sample .env` then edit `.env` with your values
-7. 🎬 **Run script**: `python main.py`
+5. 🎬 **Run script**: `uv run --env-file .env python main.py`
 
 ## ⚙️ Environment Variables
 
@@ -44,17 +40,21 @@
 
 ```bash
 # Normal run (dry run mode, INFO logging)
-python main.py
+uv run --env-file .env python main.py
 
 # Actually delete content with debug logging
-LOG_LEVEL=DEBUG DRY_RUN=false python main.py
+LOG_LEVEL=DEBUG DRY_RUN=false uv run --env-file .env python main.py
 
 # Delete content older than 30 days
-DAYS_AGO=30 DRY_RUN=false python main.py
+DAYS_AGO=30 DRY_RUN=false uv run --env-file .env python main.py
 
 # Quiet mode - only show warnings and errors
-LOG_LEVEL=WARNING python main.py
+LOG_LEVEL=WARNING uv run --env-file .env python main.py
 ```
+
+> 📝 **Local vs CI**: Locally, `.env` is loaded via uv's `--env-file` flag. In GitHub Actions, environment variables come from repository secrets and variables directly — no `.env` file is used.
+
+> 💡 **Tip**: To skip typing `--env-file .env` each time, run `export UV_ENV_FILE=.env` in your shell — uv will then load `.env` automatically, so a plain `uv run python main.py` works.
 
 ## 🛡️ Safety Features
 
@@ -116,9 +116,9 @@ The project includes automated code quality checks using:
 ./scripts/check-code.sh
 
 # Individual tools
-black .                    # Format code
-ruff check --fix .         # Lint with auto-fix
-mypy .                     # Type check
+uv run black .                    # Format code
+uv run ruff check --fix .         # Lint with auto-fix
+uv run mypy .                     # Type check
 ```
 
 **CI Integration:**

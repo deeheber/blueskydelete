@@ -19,7 +19,7 @@ Environment Variables:
 - LOG_LEVEL: Logging level - DEBUG, INFO, WARNING, ERROR (default: 'INFO')
 
 Usage:
-    python main.py
+    uv run --env-file .env python main.py
 
 Author: Danielle Heberling
 """
@@ -36,17 +36,6 @@ DEFAULT_DRY_RUN = "true"
 BATCH_SIZE = 100
 COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
-
-if not os.getenv("CI"):
-    try:
-        from dotenv import load_dotenv
-
-        load_dotenv()
-    except ImportError:
-        print(
-            "⚠️ Warning: python-dotenv not installed. Install with 'pip install -e .[dev]' for .env file support"
-        )
-        pass
 
 
 class ColorFormatter(logging.Formatter):
