@@ -54,6 +54,8 @@ LOG_LEVEL=WARNING uv run --env-file .env python main.py
 
 > 📝 **Local vs CI**: Locally, `.env` is loaded via uv's `--env-file` flag. In GitHub Actions, environment variables come from repository secrets and variables directly — no `.env` file is used.
 
+> 💡 **Tip**: To skip typing `--env-file .env` each time, run `export UV_ENV_FILE=.env` in your shell — uv will then load `.env` automatically, so a plain `uv run python main.py` works.
+
 ## 🛡️ Safety Features
 
 - 🔒 **Dry run by default** - Script runs in safe mode unless explicitly disabled
