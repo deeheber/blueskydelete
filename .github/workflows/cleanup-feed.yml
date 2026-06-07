@@ -26,7 +26,7 @@ jobs:
         run: uv sync --locked --no-dev
 
       - name: Delete old posts, reposts, and likes
-        run: uv run python main.py
+        run: uv run main.py
         env:
           USERNAME: ${{ vars.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}

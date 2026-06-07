@@ -19,7 +19,7 @@ Environment Variables:
 - LOG_LEVEL: Logging level - DEBUG, INFO, WARNING, ERROR (default: 'INFO')
 
 Usage:
-    uv run --env-file .env python main.py
+    uv run --env-file .env main.py
 
 Author: Danielle Heberling
 """

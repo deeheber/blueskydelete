@@ -2,31 +2,21 @@
 
 Recreating some of the functionality of https://tweetdelete.net/, but for Bluesky!
 
-**What it does**: Automatically cleans up your Bluesky posts, reposts, and likes older than a configurable number of days (default: 90 days).
+Automatically cleans up your Bluesky posts, reposts, and likes older than a configurable number of days (default: 90 days).
 
-**Goal**: Keep your feed fresh by only maintaining recent content while cleaning up the old stuff.
-
-## ✨ Features
-
-- **Colored logging** - Color-coded log levels for better output readability
-- **Configurable log levels** - Set `LOG_LEVEL` to control verbosity (DEBUG, INFO, WARNING, ERROR)
-- **Dry run mode** - Safe testing without actually deleting content
-- **Flexible date ranges** - Configure how far back to delete with `DAYS_AGO`
-- **Multiple content types** - Handles posts, reposts, and likes
-
-## 🚀 Quick Start
+## Quick Start
 
 > This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh` or see the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/).
 
 1. **Clone this repo**
-2. **Check Python version** - See `.python-version` file (other versions might work)
+2. **Use Python 3.14** (see `.python-version`)
 3. **Install dependencies**: `uv sync`
 4. **Setup environment**:
    - **macOS/Linux**: `cp .env.sample .env` then edit `.env` with your values
    - **Windows**: `copy .env.sample .env` then edit `.env` with your values
-5. **Run script**: `uv run --env-file .env python main.py`
+5. **Run script**: `uv run --env-file .env main.py` (or use the shortcut `./scripts/run.sh` from the repo root)
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 | Variable    | Description                                                 | Default |
 | ----------- | ----------------------------------------------------------- | ------- |
@@ -36,39 +26,26 @@ Recreating some of the functionality of https://tweetdelete.net/, but for Bluesk
 | `DAYS_AGO`  | How many days back to delete content                        | `90`    |
 | `LOG_LEVEL` | Logging detail: `DEBUG`, `INFO`, `WARNING`, `ERROR`         | `INFO`  |
 
-## 💡 Usage Examples
+## Usage
 
-```bash
-# Normal run (dry run mode, INFO logging)
-uv run --env-file .env python main.py
+Set your values in `.env` (see the table above), then run `./scripts/run.sh`
+from the repo root (a shortcut for `uv run --env-file .env main.py`).
 
-# Actually delete content with debug logging
-LOG_LEVEL=DEBUG DRY_RUN=false uv run --env-file .env python main.py
+You can also override any variable inline, e.g.
+`DRY_RUN=false DAYS_AGO=30 ./scripts/run.sh`.
 
-# Delete content older than 30 days
-DAYS_AGO=30 DRY_RUN=false uv run --env-file .env python main.py
+## Safety Features
 
-# Quiet mode - only show warnings and errors
-LOG_LEVEL=WARNING uv run --env-file .env python main.py
-```
+- **Dry run by default** - runs in safe mode unless `DRY_RUN=false`.
+- **Colored logging** - dry-run operations print in yellow so it's clear nothing is being deleted. Set `LOG_LEVEL=DEBUG` to see exactly what would be deleted before a real run.
 
-> **Local vs CI**: Locally, `.env` is loaded via uv's `--env-file` flag. In GitHub Actions, environment variables come from repository secrets and variables directly — no `.env` file is used.
-
-> **Tip**: To skip typing `--env-file .env` each time, run `export UV_ENV_FILE=.env` in your shell — uv will then load `.env` automatically, so a plain `uv run python main.py` works.
-
-## 🛡️ Safety Features
-
-- **Dry run by default** - Script runs in safe mode unless explicitly disabled
-- **Colored warnings** - Dry run operations show in yellow to make it clear no actual deletion is happening
-- **Detailed logging** - Use `LOG_LEVEL=DEBUG` to see exactly what would be deleted before running for real
-
-## 🤖 Automated Scheduling
+## Automated Scheduling
 
 The repository includes a GitHub Actions workflow (`.github/workflows/cleanup-feed.yml`) that automatically runs the cleanup script on a schedule.
 
 **Current schedule**: Every Friday at 5:00 AM UTC (`0 5 * * 5`)
 
-### 🔧 Setting up automated runs:
+### Setting up automated runs
 
 1. **Repository Variables** (Settings → Secrets and variables → Actions → Variables):
 
@@ -80,40 +57,32 @@ The repository includes a GitHub Actions workflow (`.github/workflows/cleanup-fe
 
    - `PASSWORD` - Your Bluesky app password
 
-3. **Manual runs**: You can also trigger the workflow manually from the Actions tab
+3. **Manual runs**: trigger the workflow manually from the Actions tab
 
-### ⏰ Customizing the schedule:
+### Customizing the schedule
 
-Edit the cron expression in `.github/workflows/cleanup-feed.yml`:
+Edit the cron expression in `.github/workflows/cleanup-feed.yml`. Use [crontab.guru](https://crontab.guru) to build a different schedule.
 
 ```yaml
 schedule:
   - cron: "0 5 * * 5" # Every Friday at 5 AM UTC
 ```
 
-**Common cron patterns:**
-
-- `0 0 * * 0` - Weekly on Sunday at midnight
-- `0 12 1 * *` - Monthly on the 1st at noon
-- `0 6 * * 1,3,5` - Monday, Wednesday, Friday at 6 AM
-
-**Note**: The workflow uses colored logging output which displays nicely in GitHub Actions logs, making it seamless to monitor the cleanup process.
-
-## 🔧 Development
+## Development
 
 ### Code Quality
 
-The project includes automated code quality checks using:
+Code quality is checked with:
 
-- **Black** - Code formatting
-- **Ruff** - Fast Python linter with auto-fix
-- **MyPy** - Static type checking
+- **Black** - formatting
+- **Ruff** - linting (with auto-fix)
+- **MyPy** - static type checking
 
-**Run checks locally:**
+**Run locally:**
 
 ```bash
 # Run all checks with auto-fix
-./scripts/check-code.sh
+./scripts/code-quality.sh
 
 # Individual tools
 uv run black .                    # Format code
@@ -121,8 +90,4 @@ uv run ruff check --fix .         # Lint with auto-fix
 uv run mypy .                     # Type check
 ```
 
-**CI Integration:**
-
-- Code quality checks run automatically on pull requests and main branch pushes
-- All checks must pass before merging
-- Uses the same tools as local development for consistency
+**CI:** Code quality checks run on pull requests and pushes to `main`; all must pass before merging.
