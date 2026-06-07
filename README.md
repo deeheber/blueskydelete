@@ -14,7 +14,7 @@ Automatically cleans up your Bluesky posts, reposts, and likes older than a conf
 4. **Setup environment**:
    - **macOS/Linux**: `cp .env.sample .env` then edit `.env` with your values
    - **Windows**: `copy .env.sample .env` then edit `.env` with your values
-5. **Run script**: `uv run --env-file .env main.py`
+5. **Run script**: `uv run --env-file .env main.py` (or use the shortcut `./scripts/run.sh` from the repo root)
 
 ## Environment Variables
 
@@ -26,25 +26,13 @@ Automatically cleans up your Bluesky posts, reposts, and likes older than a conf
 | `DAYS_AGO`  | How many days back to delete content                        | `90`    |
 | `LOG_LEVEL` | Logging detail: `DEBUG`, `INFO`, `WARNING`, `ERROR`         | `INFO`  |
 
-## Usage Examples
+## Usage
 
-```bash
-# Normal run (dry run mode, INFO logging)
-uv run --env-file .env main.py
+Set your values in `.env` (see the table above), then run `./scripts/run.sh`
+from the repo root (a shortcut for `uv run --env-file .env main.py`).
 
-# Actually delete content with debug logging
-LOG_LEVEL=DEBUG DRY_RUN=false uv run --env-file .env main.py
-
-# Delete content older than 30 days
-DAYS_AGO=30 DRY_RUN=false uv run --env-file .env main.py
-
-# Quiet mode - only show warnings and errors
-LOG_LEVEL=WARNING uv run --env-file .env main.py
-```
-
-> **Local vs CI**: Locally, `.env` is loaded via uv's `--env-file` flag. In GitHub Actions, environment variables come from repository secrets and variables directly — no `.env` file is used.
-
-> **Tip**: To skip typing `--env-file .env` each time, run `export UV_ENV_FILE=.env` in your shell — uv will then load `.env` automatically, so a plain `uv run main.py` works.
+You can also override any variable inline, e.g.
+`DRY_RUN=false DAYS_AGO=30 ./scripts/run.sh`.
 
 ## Safety Features
 
@@ -100,7 +88,7 @@ The project includes automated code quality checks using:
 
 ```bash
 # Run all checks with auto-fix
-./scripts/check-code.sh
+./scripts/code-quality.sh
 
 # Individual tools
 uv run black .                    # Format code
