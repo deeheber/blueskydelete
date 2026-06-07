@@ -6,34 +6,30 @@ authors = [
   {name = "Danielle Heberling"}
 ]
 dependencies = [
-  "atproto==0.0.65"
+  "atproto>=0.0.67,<0.1"
 ]
 
 [dependency-groups]
 dev = [
-    "black==25.12.0",
-    "mypy==1.19.0",
-    "ruff==0.14.9"
+    "black>=26.5.1,<26.6",
+    "mypy>=2.1.0,<2.2",
+    "ruff>=0.15.16,<0.16"
 ]
+
+[tool.uv]
+required-version = ">=0.11.19,<0.12"
 
 [tool.black]
 line-length = 79
+# pin target: open-ended requires-python would otherwise infer py315
 target-version = ['py313']
 
 [tool.mypy]
 python_version = "3.13"
-warn_return_any = true
+strict = true
+# not included in strict
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
 warn_unreachable = true
-strict_equality = true
 
 [[tool.mypy.overrides]]
 module = "atproto"
@@ -41,7 +37,6 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 79
-target-version = "py313"
 
 [tool.ruff.lint]
 select = [
