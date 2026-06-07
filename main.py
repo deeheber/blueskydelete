@@ -214,12 +214,10 @@ def fetch_and_process(
                 )
                 logger.info(f"🔗 URI: {item.uri}")
 
-                # Debug logging for item details using model_dump_json with indentation
                 logger.debug(
                     f"📋 Item details:\n{item.model_dump_json(indent=2)}"
                 )
 
-                # Perform deletion
                 getattr(client, client_method)(item.uri)
                 logger.info(
                     f"🎉 {collection_name.title()} deleted successfully! ✅"
