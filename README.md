@@ -34,6 +34,9 @@ from the repo root (a shortcut for `uv run --env-file .env main.py`).
 You can also override any variable inline, e.g.
 `DRY_RUN=false DAYS_AGO=30 ./scripts/run.sh`.
 
+Cleanup continues after deletion failures, reports counts, and exits with
+status 1 if any deletion failed. Dry runs report what would be deleted.
+
 ## Safety Features
 
 - **Dry run by default** - runs in safe mode unless `DRY_RUN=false`.
