@@ -14,7 +14,7 @@ NOW = datetime(2026, 10, 4, 12, tzinfo=UTC)
 # All eligible fixtures represent the same UTC cutoff or an older instant.
 ELIGIBLE_TIMESTAMPS = (
     "2026-10-03T11:59:59.999999Z",
-    "2026-10-03T12:00:00.000000Z",
+    "2026-10-03T12:00:00.000Z",
     "2026-10-03T12:00:00Z",
     "2026-10-03T12:00:00+00:00",
     "2026-10-03T14:00:00+02:00",
@@ -24,6 +24,7 @@ ELIGIBLE_TIMESTAMPS = (
 )
 NEWER_TIMESTAMPS = (
     "2026-10-03T12:00:00.000001Z",
+    "2026-10-03T12:00:00.001Z",
     "2026-10-03T14:00:00.000001+02:00",
     "2026-10-03T05:00:00.000001-07:00",
 )
@@ -73,6 +74,7 @@ class CleanupEligibilityTests(unittest.TestCase):
             )
         return clock
 
+    @unittest.skipUnless(hasattr(time, "tzset"), "requires POSIX tzset")
     def test_eligibility_is_independent_of_local_timezone(self) -> None:
         for timezone in ("UTC0", "PST8PDT", "JST-9"):
             for collection in ("post", "repost", "like"):

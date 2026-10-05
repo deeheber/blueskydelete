@@ -70,6 +70,12 @@ schedule:
 
 ## Development
 
+Run the offline tests from the repo root:
+
+```bash
+uv run python -m unittest discover -s tests -v
+```
+
 ### Code Quality
 
 Code quality is checked with:
