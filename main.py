@@ -26,7 +26,7 @@ Author: Danielle Heberling
 
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from atproto import Client, exceptions
 
@@ -186,7 +186,7 @@ def fetch_and_process(
         logger.error("DAYS_AGO must be a valid integer")
         raise SystemExit(1) from None
 
-    target_date = datetime.now() - timedelta(days=num_days)
+    target_date = datetime.now(UTC) - timedelta(days=num_days)
     logger.info(
         f"🗓️ Target date: {target_date.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}"
     )
@@ -196,16 +196,14 @@ def fetch_and_process(
     dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
 
     for item in items:
-        # Break early to save some cycles if current post is after target date
-        if (
-            datetime.strptime(item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
-            > target_date
-        ):
-            break
+        item_timestamp = datetime.fromisoformat(item.value.created_at)
+        if item_timestamp.tzinfo is None:
+            raise ValueError("Record timestamp must include a timezone")
+        item_timestamp = item_timestamp.astimezone(UTC)
 
-        item_timestamp = datetime.strptime(
-            item.value.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-        )
+        # Break early to save some cycles if current post is after target date
+        if item_timestamp > target_date:
+            break
 
         if not dry_run:
             try:
