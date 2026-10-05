@@ -26,6 +26,7 @@ Author: Danielle Heberling
 
 import logging
 import os
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from atproto import Client, exceptions
@@ -36,6 +37,15 @@ DEFAULT_DRY_RUN = "true"
 BATCH_SIZE = 100
 COLLECTION_PREFIX = "app.bsky.feed."
 LOG_SEPARATOR = "=" * 75
+
+
+@dataclass
+class CleanupResult:
+    """Counts of deleted, failed, and previewed cleanup records."""
+
+    deleted: int = 0
+    failed: int = 0
+    would_delete: int = 0
 
 
 class ColorFormatter(logging.Formatter):
@@ -139,7 +149,7 @@ def authenticate_client(logger: logging.Logger) -> tuple[Client, str]:
 
 def fetch_and_process(
     collection_name: str, client: Client, repo: str, logger: logging.Logger
-) -> None:
+) -> CleanupResult:
     """Fetch and process items from a specific collection for deletion.
 
     Args:
@@ -147,6 +157,9 @@ def fetch_and_process(
         client: Authenticated Bluesky client
         repo: Repository/username to process
         logger: Logger instance for output
+
+    Returns:
+        Counts of deleted, failed, and previewed records.
 
     Raises:
         SystemExit: If fetching records fails
@@ -192,7 +205,7 @@ def fetch_and_process(
     )
 
     client_method = f"delete_{collection_name}"
-    num_deleted = 0
+    counts = CleanupResult()
     dry_run = os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true"
 
     for item in items:
@@ -217,14 +230,9 @@ def fetch_and_process(
                 )
 
                 getattr(client, client_method)(item.uri)
-                logger.info(
-                    f"🎉 {collection_name.title()} deleted successfully! ✅"
-                )
-
-                logger.info(LOG_SEPARATOR)
-                num_deleted += 1
 
             except exceptions.AtProtocolError as e:
+                counts.failed += 1
                 logger.error(
                     f"❌ Failed to delete {collection_name} {item.uri}: {e}"
                 )
@@ -233,11 +241,18 @@ def fetch_and_process(
                 # Continue processing other items even if one fails
                 continue
             except Exception as e:
+                counts.failed += 1
                 logger.error(
                     f"💀 Unexpected error deleting {collection_name} {item.uri}: {e}"
                 )
                 logger.info(LOG_SEPARATOR)
                 continue
+            else:
+                counts.deleted += 1
+                logger.info(
+                    f"🎉 {collection_name.title()} deleted successfully! ✅"
+                )
+                logger.info(LOG_SEPARATOR)
         else:
             logger.warning(
                 f"🔄 DRY RUN: Would delete {collection_name} from {item_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -250,13 +265,18 @@ def fetch_and_process(
             )
 
             logger.info(LOG_SEPARATOR)
-            num_deleted += 1
+            counts.would_delete += 1
 
-    logger.info(
-        f"✅ {num_deleted} {collection_name}s {'deleted' if not dry_run else 'processed'}!"
-    )
-    logger.info(f"🚀 All done with {collection_name}s")
+    if dry_run:
+        logger.info(
+            f"🔄 DRY RUN: {counts.would_delete} {collection_name}s would be deleted"
+        )
+    else:
+        logger.info(
+            f"{collection_name.title()}s: {counts.deleted} deleted, {counts.failed} failed"
+        )
     logger.info(LOG_SEPARATOR)
+    return counts
 
 
 def main() -> None:
@@ -264,16 +284,36 @@ def main() -> None:
 
     Validates environment, sets up logging, authenticates with Bluesky,
     and processes posts, reposts, and likes for deletion based on age.
+
+    Raises:
+        SystemExit: If validation, authentication, fetching, or deletion
+            fails. Deletion failures are reported after all collections.
     """
     validate_environment()
     logger = setup_logging()
     client, repo = authenticate_client(logger)
 
-    fetch_and_process("post", client, repo, logger)
-    fetch_and_process("repost", client, repo, logger)
-    fetch_and_process("like", client, repo, logger)
+    totals = CleanupResult()
+    for collection in ("post", "repost", "like"):
+        result = fetch_and_process(collection, client, repo, logger)
+        totals.deleted += result.deleted
+        totals.failed += result.failed
+        totals.would_delete += result.would_delete
 
-    logger.info("✨ All done!")
+    if totals.failed:
+        logger.error(
+            f"Cleanup incomplete: {totals.deleted} deleted, {totals.failed} failed"
+        )
+        raise SystemExit(1)
+
+    if os.getenv("DRY_RUN", DEFAULT_DRY_RUN).lower() == "true":
+        logger.info(
+            f"🔄 DRY RUN total: {totals.would_delete} records would be deleted"
+        )
+    else:
+        logger.info(
+            f"Cleanup total: {totals.deleted} deleted, {totals.failed} failed"
+        )
 
 
 if __name__ == "__main__":

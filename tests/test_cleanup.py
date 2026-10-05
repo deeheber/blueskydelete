@@ -1,4 +1,4 @@
-"""Offline eligibility checks; all Bluesky API calls are mocked."""
+"""Offline cleanup checks; all Bluesky API calls are mocked."""
 
 import logging
 import os
@@ -6,6 +6,8 @@ import time
 import unittest
 from datetime import UTC, datetime, tzinfo
 from unittest.mock import Mock, call, patch
+
+from atproto import exceptions
 
 import main
 
@@ -133,6 +135,164 @@ class CleanupEligibilityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "include a timezone"):
                 self.process("post", ("2026-10-03T12:00:00",))
         self.client.delete_post.assert_not_called()
+
+
+class CleanupOutcomeTests(unittest.TestCase):
+    """Verify counts, continuation, and exit status with mocked API calls."""
+
+    def setUp(self) -> None:
+        self.client = Mock()
+        self.logger = Mock(spec=logging.Logger)
+        self.records = {
+            collection: [
+                Mock(
+                    uri=f"at://test/{collection}/{index}",
+                    value=Mock(created_at="2000-01-01T00:00:00Z"),
+                )
+                for index in range(2 if collection == "post" else 1)
+            ]
+            for collection in ("post", "repost", "like")
+        }
+
+        def list_records(params: dict[str, object]) -> Mock:
+            collection = str(params["collection"]).removeprefix(
+                main.COLLECTION_PREFIX
+            )
+            return Mock(records=self.records[collection], cursor=None)
+
+        self.client.com.atproto.repo.list_records.side_effect = list_records
+        self.enterContext(
+            patch.dict(
+                os.environ,
+                {
+                    "USERNAME": "test",
+                    "PASSWORD": "mock-password",
+                    "DAYS_AGO": "1",
+                    "DRY_RUN": "false",
+                },
+                clear=True,
+            )
+        )
+        self.enterContext(
+            patch.object(
+                main, "authenticate_client", return_value=(self.client, "test")
+            )
+        )
+        self.enterContext(
+            patch.object(main, "setup_logging", return_value=self.logger)
+        )
+
+    def assert_all_deletions_attempted(self) -> None:
+        """Check that every collection's records reached its delete API."""
+        for collection, records in self.records.items():
+            self.assertEqual(
+                getattr(self.client, f"delete_{collection}").call_args_list,
+                [call(record.uri) for record in records],
+            )
+
+    def test_mixed_failures_continue_and_exit_nonzero(self) -> None:
+        self.client.delete_post.side_effect = [
+            exceptions.AtProtocolError("mock post failure"),
+            None,
+        ]
+        self.client.delete_like.side_effect = RuntimeError("mock like failure")
+
+        with self.assertRaises(SystemExit) as exit_context:
+            main.main()
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.assert_all_deletions_attempted()
+        for summary in (
+            "Posts: 1 deleted, 1 failed",
+            "Reposts: 1 deleted, 0 failed",
+            "Likes: 0 deleted, 1 failed",
+        ):
+            self.logger.info.assert_any_call(summary)
+        self.logger.error.assert_any_call(
+            "Cleanup incomplete: 2 deleted, 2 failed"
+        )
+
+    def test_all_deletions_fail(self) -> None:
+        for collection in self.records:
+            getattr(self.client, f"delete_{collection}").side_effect = (
+                exceptions.AtProtocolError("mock deletion failure")
+            )
+
+        with self.assertRaises(SystemExit) as exit_context:
+            main.main()
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.assert_all_deletions_attempted()
+        self.logger.error.assert_any_call(
+            "Cleanup incomplete: 0 deleted, 4 failed"
+        )
+
+    def test_successful_and_empty_runs_return_normally(self) -> None:
+        for empty in (False, True):
+            with self.subTest(empty=empty):
+                self.client.reset_mock()
+                self.logger.reset_mock()
+                if empty:
+                    for records in self.records.values():
+                        records.clear()
+
+                main.main()
+
+                self.assert_all_deletions_attempted()
+                self.logger.error.assert_not_called()
+                self.logger.info.assert_any_call(
+                    f"Cleanup total: {0 if empty else 4} deleted, 0 failed"
+                )
+
+    def test_explicit_and_default_dry_runs(self) -> None:
+        for dry_run in ("true", None):
+            with self.subTest(dry_run=dry_run):
+                self.logger.reset_mock()
+                if dry_run is None:
+                    os.environ.pop("DRY_RUN")
+                else:
+                    os.environ["DRY_RUN"] = dry_run
+
+                main.main()
+
+                for collection, records in self.records.items():
+                    getattr(
+                        self.client, f"delete_{collection}"
+                    ).assert_not_called()
+                    self.logger.info.assert_any_call(
+                        f"🔄 DRY RUN: {len(records)} {collection}s would be deleted"
+                    )
+                self.logger.info.assert_any_call(
+                    "🔄 DRY RUN total: 4 records would be deleted"
+                )
+                self.logger.error.assert_not_called()
+
+    def test_serialization_failure_counts_and_continues(self) -> None:
+        self.records["post"][0].model_dump_json.side_effect = ValueError(
+            "mock serialization failure"
+        )
+
+        result = main.fetch_and_process(
+            "post", self.client, "test", self.logger
+        )
+
+        self.assertEqual(result, main.CleanupResult(deleted=1, failed=1))
+        self.client.delete_post.assert_called_once_with(
+            self.records["post"][1].uri
+        )
+
+    def test_fetch_failure_still_exits_immediately(self) -> None:
+        self.client.com.atproto.repo.list_records.side_effect = (
+            exceptions.AtProtocolError("mock fetch failure")
+        )
+
+        with self.assertRaises(SystemExit) as exit_context:
+            main.main()
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.client.com.atproto.repo.list_records.assert_called_once()
+        for collection in self.records:
+            getattr(self.client, f"delete_{collection}").assert_not_called()
 
 
 if __name__ == "__main__":
