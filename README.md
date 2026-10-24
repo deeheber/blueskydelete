@@ -83,8 +83,7 @@ uv run python -m unittest discover -s tests -v
 
 Code quality is checked with:
 
-- **Black** - formatting
-- **Ruff** - linting (with auto-fix)
+- **Ruff** - formatting and linting (with auto-fix)
 - **MyPy** - static type checking
 
 **Run locally:**
@@ -94,8 +93,8 @@ Code quality is checked with:
 ./scripts/code-quality.sh
 
 # Individual tools
-uv run black .                    # Format code
 uv run ruff check --fix .         # Lint with auto-fix
+uv run ruff format .              # Format code
 uv run mypy .                     # Type check
 ```
 
