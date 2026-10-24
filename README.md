@@ -6,7 +6,7 @@ Automatically cleans up your Bluesky posts, reposts, and likes older than a conf
 
 ## Quick Start
 
-> This project uses [uv](https://docs.astral.sh/uv/) for dependency management. Install it with `curl -LsSf https://astral.sh/uv/install.sh | sh` or see the [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/).
+> This project uses [uv](https://docs.astral.sh/uv/) `>=0.13.5,<0.14` for dependency management. See the [installation docs](https://docs.astral.sh/uv/getting-started/installation/).
 
 1. **Clone this repo**
 2. **Use Python 3.14** (see `.python-version`)
