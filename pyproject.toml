@@ -11,18 +11,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=26.5.1,<26.6",
     "mypy>=2.4.0,<2.5",
-    "ruff>=0.16.10,<0.17"
+    "ruff>=0.17.2,<0.18"
 ]
 
 [tool.uv]
-required-version = ">=0.12.23,<0.13"
-
-[tool.black]
-line-length = 79
-# pin target explicitly to match the requires-python ceiling
-target-version = ['py314']
+required-version = ">=0.13.5,<0.14"
 
 [tool.mypy]
 python_version = "3.14"
@@ -37,6 +31,16 @@ ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 79
+indent-width = 4
+target-version = "py314"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+preview = false
 
 [tool.ruff.lint]
 select = [
@@ -49,7 +53,7 @@ select = [
     "UP",  # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line length is managed by the formatter
 ]
 
 [tool.ruff.lint.isort]

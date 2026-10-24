@@ -214,9 +214,9 @@ class CleanupOutcomeTests(unittest.TestCase):
 
     def test_all_deletions_fail(self) -> None:
         for collection in self.records:
-            getattr(self.client, f"delete_{collection}").side_effect = (
-                exceptions.AtProtocolError("mock deletion failure")
-            )
+            getattr(
+                self.client, f"delete_{collection}"
+            ).side_effect = exceptions.AtProtocolError("mock deletion failure")
 
         with self.assertRaises(SystemExit) as exit_context:
             main.main()
